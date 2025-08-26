@@ -1,0 +1,14 @@
+.venv/bin/gunicorn fastapi_stars.main:app \
+  --bind 127.0.0.1:3903 \
+  --worker-class uvicorn.workers.UvicornWorker\
+  --workers 4 \
+  --max-requests 10000 \
+  --max-requests-jitter 1000 \
+  --access-logfile - \
+  --keep-alive 75 \
+  --backlog 2048 \
+  --timeout 60 \
+  --graceful-timeout 30 \
+  --preload \
+  --worker-tmp-dir /dev/shm \
+  --log-level info \

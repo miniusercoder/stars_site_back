@@ -1,0 +1,1 @@
+.venv/bin/gunicorn django_stars.django_stars.asgi:application --workers 2 --worker-connections 1000 --worker-class uvicorn.workers.UvicornWorker --bind unix:/run/admin/stars_site_admin.sock --access-logfile -
