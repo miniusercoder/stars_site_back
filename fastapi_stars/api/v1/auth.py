@@ -124,9 +124,9 @@ def validate_session(principal: Principal = Depends(current_principal)):
         gs = principal["guest"]
         if gs.expires_at <= timezone.now():
             return SessionValidation(success=False)
-        return SessionValidation(success=True)
+        return SessionValidation(success=True, token_type=principal["kind"])
     elif principal["kind"] == "user":
-        return SessionValidation(success=True)
+        return SessionValidation(success=True, token_type=principal["kind"])
     else:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid session"

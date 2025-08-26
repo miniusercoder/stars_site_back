@@ -2,7 +2,6 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-
 type Item = Literal["star", "premium", "ton"]
 
 
