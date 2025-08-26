@@ -2,7 +2,6 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from fastapi_stars.api.deps import current_principal, Principal
 from fastapi_stars.schemas.users import UserOut
-from django_stars.stars_app.models import User
 
 router = APIRouter()
 

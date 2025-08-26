@@ -6,6 +6,7 @@ from threading import main_thread
 import nacl.exceptions
 import requests
 from Cryptodome.Cipher import AES
+from bot.models import User, TonTransaction
 from loguru import logger
 from nacl.bindings import (
     crypto_sign_ed25519_sk_to_curve25519,
@@ -13,8 +14,6 @@ from nacl.bindings import (
     crypto_scalarmult,
 )
 from pytoniq_core import Address
-
-from bot.models import User, TonTransaction
 from services.wallet.helpers import get_wallet
 from src.imports import config
 from src.main import process_ton_transaction

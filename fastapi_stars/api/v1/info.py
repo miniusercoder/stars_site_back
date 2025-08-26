@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+from fastapi_cache.decorator import cache
 
 from fastapi_stars.schemas.info import BasePrices, PricesWithCurrency, PriceWithCurrency
 from fastapi_stars.settings import settings
@@ -10,6 +11,7 @@ router = APIRouter()
 
 
 @router.get("/prices", tags=["info"], response_model=BasePrices)
+@cache(expire=60)
 def get_prices():
     ton_price_in_usd = TON.ton_to_usd(1)
     ton_price_in_rub = USDT.usd_to_rub(ton_price_in_usd)

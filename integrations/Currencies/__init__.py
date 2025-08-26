@@ -1,4 +1,7 @@
-import json, redis, requests
+import json
+
+import redis
+import requests
 
 r = redis.Redis(host="localhost", port=6379, decode_responses=True)
 
