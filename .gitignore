@@ -4,3 +4,4 @@
 fragment_cookies.json
 **/migrations/*
 !**/migrations/__init__.py
+**/static
