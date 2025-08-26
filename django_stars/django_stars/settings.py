@@ -22,6 +22,7 @@ SECRET_KEY = os.getenv("SECRET_KEY", "change_me")
 DEBUG = os.getenv("DEBUG", "False") == "True"
 
 ALLOWED_HOSTS = ["*"]
+CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "https://*").split(",")
 
 
 # Application definition
