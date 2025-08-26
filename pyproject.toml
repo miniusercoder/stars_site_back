@@ -6,7 +6,6 @@ dependencies = [
     "beautifulsoup4>=4.13.5",
     "cryptography>=45.0.6",
     "django>=5.2.5",
-    "fastapi-cache2[redis]>=0.1.8",
     "fastapi[standard]>=0.116.1",
     "gunicorn>=23.0.0",
     "loguru>=0.7.3",

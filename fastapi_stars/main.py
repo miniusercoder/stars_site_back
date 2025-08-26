@@ -1,28 +1,15 @@
-from contextlib import asynccontextmanager
-from typing import AsyncIterator
+if True:  # Не сортировать эти импорты
+    from fastapi_stars.scripts import init_django  # noqa: F401
 
-import aioredis
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi_cache import FastAPICache
-from fastapi_cache.backends.redis import RedisBackend
 
 from fastapi_stars.api.routing import api_router
-from fastapi_stars.scripts import init_django  # noqa: F401
 from fastapi_stars.settings import settings
-
-
-@asynccontextmanager
-async def lifespan(_: FastAPI) -> AsyncIterator[None]:
-    redis = aioredis.from_url("redis://localhost:6379")
-    FastAPICache.init(RedisBackend(redis), prefix="start-site-cache")
-    yield
-
 
 app = FastAPI(
     title="stars_site_backend",
     version="1.0.0",
-    lifespan=lifespan,
     servers=[
         {"url": "https://helperstars.tg", "description": "Production"},
         {"url": "http://127.0.0.1:8000", "description": "Local"},
