@@ -36,7 +36,7 @@ def _get_premium_price(amount: int) -> Tuple[float, float, float]:
 
 
 @router.get("/header_prices", tags=["info"], response_model=HeaderPrices)
-def get_prices():
+def get_header_prices():
     cached_prices = r.get("stars_site:base_prices")
     if cached_prices:
         return HeaderPrices.model_validate_json(cached_prices)
