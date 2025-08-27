@@ -26,8 +26,6 @@ from fastapi_stars.settings import settings
 
 router = APIRouter()
 
-GUEST_TTL_SEC = 7 * 24 * 3600  # 7 дней
-
 
 @router.post("/tonconnect", tags=["auth"], response_model=TokenPair)
 def tonconnect_login(
@@ -55,7 +53,6 @@ def tonconnect_login(
         )
     user, _ = User.objects.get_or_create(wallet_address=subject)
 
-    # если пришёл guest_token — переназначаем
     gs = principal["guest"]
     # Order.objects.filter(guest_session=gs).update(
     #     user=user, guest_session=None
@@ -120,11 +117,11 @@ def create_guest():
     payload_hash = generate_proof_payload()
     GuestSession.objects.create(
         id=sid,
-        expires_at=timezone.now() + timedelta(seconds=GUEST_TTL_SEC),
+        expires_at=timezone.now() + timedelta(seconds=settings.jwt_guest_ttl),
         is_active=True,
     )
     token = create_guest_token(
-        settings.jwt_secret, settings.jwt_alg, GUEST_TTL_SEC, sid, payload_hash
+        settings.jwt_secret, settings.jwt_alg, settings.jwt_guest_ttl, sid, payload_hash
     )
     return GuestTokenOut(
         guest=token,

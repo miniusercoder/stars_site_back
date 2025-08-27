@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     jwt_alg: str = "HS256"
     jwt_access_ttl: int = 3600  # 1 час
     jwt_refresh_ttl: int = 30 * 24 * 3600  # 30 дней
+    jwt_guest_ttl: int = 7 * 24 * 3600  # 7 дней
 
     ton_api_key: str
     ton_mnemonic: str
