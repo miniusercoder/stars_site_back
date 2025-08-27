@@ -1,6 +1,6 @@
 from typing import TypedDict, Literal, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from django_stars.stars_app.models import User, GuestSession
 
@@ -30,3 +30,28 @@ class GuestTokenOut(BaseModel):
 class SessionValidation(BaseModel):
     success: bool
     token_type: Optional[AuthType] = None
+
+
+class TonProofDomain(BaseModel):
+    lenght_bytes: str = Field(None, alias="lengthBytes")
+    value: str
+
+
+class TonProofResponse(BaseModel):
+    timestamp: str
+    domain: TonProofDomain
+    signature: str
+    payload: str
+
+
+class TonAccount(BaseModel):
+    address: str
+    chain: int
+    wallet_state_init: str = Field(None, alias="walletStateInit")
+    public_key: str = Field(None, alias="publicKey")
+
+
+class TonConnectProof(BaseModel):
+    wallet_address: str
+    proof: TonProofResponse
+    account: TonAccount

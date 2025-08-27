@@ -17,18 +17,13 @@ from fastapi_stars.schemas.auth import (
     RefreshIn,
     GuestTokenOut,
     SessionValidation,
+    TonConnectProof,
 )
 from fastapi_stars.settings import settings
 
 router = APIRouter()
 
 GUEST_TTL_SEC = 7 * 24 * 3600  # 7 дней
-
-
-# fastapi_app/api/v1/auth.py (добавка в ваш /auth/tonconnect)
-class TonConnectProof(BaseModel):
-    wallet_address: str
-    signature: str
 
 
 @router.post("/tonconnect", tags=["auth"])
@@ -41,24 +36,17 @@ def tonconnect_login(
             detail="Only guest sessions can use TonConnect login",
         )
     # ... верификация TonConnect, поиск/создание AppUser user ...
-    subject = TonConnectProof.wallet_address
+    subject = proof.account.address
     user, _ = User.objects.get_or_create(wallet_address=subject)
 
     # если пришёл guest_token — переназначаем
-    if proof.guest_token:
-        payload = decode_any(proof.guest_token, settings.jwt_secret, settings.jwt_alg)
-        if payload.get("type") == "guest":
-            sid = payload["sid"]
-            try:
-                gs = GuestSession.objects.get(pk=sid, is_active=True)
-                # Order.objects.filter(guest_session=gs).update(
-                #     user=user, guest_session=None
-                # )
-                gs.is_active = False
-                gs.claimed_by_user_id = user.pk
-                gs.save(update_fields=["is_active", "claimed_by_user_id"])
-            except GuestSession.DoesNotExist:
-                pass  # молча игнорируем
+    gs = principal["guest"]
+    # Order.objects.filter(guest_session=gs).update(
+    #     user=user, guest_session=None
+    # )
+    gs.is_active = False
+    gs.claimed_by_user_id = user.pk
+    gs.save(update_fields=["is_active", "claimed_by_user_id"])
 
     # выдаём обычные access/refresh
     return {
