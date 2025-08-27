@@ -29,11 +29,17 @@ GUEST_TTL_SEC = 7 * 24 * 3600  # 7 дней
 class TonConnectProof(BaseModel):
     wallet_address: str
     signature: str
-    guest_token: str | None = None
 
 
 @router.post("/tonconnect", tags=["auth"])
-def tonconnect_login(proof: TonConnectProof):
+def tonconnect_login(
+    proof: TonConnectProof, principal: Principal = Depends(current_principal)
+):
+    if not principal["kind"] == "guest":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only guest sessions can use TonConnect login",
+        )
     # ... верификация TonConnect, поиск/создание AppUser user ...
     subject = TonConnectProof.wallet_address
     user, _ = User.objects.get_or_create(wallet_address=subject)
