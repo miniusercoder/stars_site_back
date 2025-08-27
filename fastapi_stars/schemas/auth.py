@@ -33,7 +33,7 @@ class SessionValidation(BaseModel):
 
 
 class TonProofDomain(BaseModel):
-    lenght_bytes: str = Field(None, alias="lengthBytes")
+    lengthBytes: str
     value: str
 
 

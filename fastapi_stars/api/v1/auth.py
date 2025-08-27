@@ -4,6 +4,9 @@ from uuid import uuid4
 from django.utils import timezone
 from fastapi import APIRouter, HTTPException, status, Depends
 from pytoniq_core import Address, AddressError
+from tonutils.tonconnect.models import TonProof
+from tonutils.tonconnect.utils import generate_proof_payload
+from tonutils.tonconnect.utils.verifiers import verify_ton_proof
 
 from django_stars.stars_app.models import User, GuestSession
 from fastapi_stars.api.deps import Principal, current_principal
@@ -35,12 +38,20 @@ def tonconnect_login(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Only guest sessions can use TonConnect login",
         )
-    # ... верификация TonConnect, поиск/создание AppUser user ...
     try:
         subject = Address(proof.account.address).to_str()
     except AddressError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid wallet address"
+        )
+    if not verify_ton_proof(
+        proof.account.public_key,
+        TonProof.from_dict(proof.model_dump()),
+        subject,
+        principal["guest"].ton_verify,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid TonConnect proof"
         )
     user, _ = User.objects.get_or_create(wallet_address=subject)
 
@@ -106,19 +117,19 @@ def refresh_tokens(body: RefreshIn):
 @router.post("/guest", response_model=GuestTokenOut, tags=["auth"])
 def create_guest():
     sid = str(uuid4())
-    ton_verify_string = str(uuid4())
+    payload_hash = generate_proof_payload()
     GuestSession.objects.create(
         id=sid,
         expires_at=timezone.now() + timedelta(seconds=GUEST_TTL_SEC),
-        ton_verify=ton_verify_string,
+        ton_verify=payload_hash,
         is_active=True,
     )
     token = create_guest_token(
-        settings.jwt_secret, settings.jwt_alg, GUEST_TTL_SEC, sid, ton_verify_string
+        settings.jwt_secret, settings.jwt_alg, GUEST_TTL_SEC, sid, payload_hash
     )
     return GuestTokenOut(
         guest=token,
-        ton_verify=ton_verify_string,
+        ton_verify=payload_hash,
     )
 
 
