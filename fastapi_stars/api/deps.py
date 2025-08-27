@@ -16,7 +16,11 @@ def current_principal(credentials=Depends(security)) -> Principal:
     if typ == "access":
         uid = payload.get("sub")
         try:
-            return {"kind": "user", "user": User.objects.get(pk=uid)}
+            return {
+                "kind": "user",
+                "user": User.objects.get(pk=uid),
+                "payload": payload,
+            }
         except User.DoesNotExist:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found"
@@ -33,7 +37,7 @@ def current_principal(credentials=Depends(security)) -> Principal:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Guest session expired"
             )
-        return {"kind": "guest", "guest": gs}
+        return {"kind": "guest", "guest": gs, "payload": payload}
     else:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Unsupported token type"

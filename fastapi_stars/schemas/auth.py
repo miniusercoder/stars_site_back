@@ -11,6 +11,7 @@ class Principal(TypedDict, total=False):
     kind: AuthType
     user: User
     guest: GuestSession
+    payload: dict
 
 
 class TokenPair(BaseModel):

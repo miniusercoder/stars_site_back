@@ -48,7 +48,7 @@ def tonconnect_login(
         proof.account.public_key,
         TonProof.from_dict(proof.model_dump()),
         subject,
-        principal["guest"].ton_verify,
+        principal["payload"]["ton_verify"],
     ):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid TonConnect proof"
@@ -121,7 +121,6 @@ def create_guest():
     GuestSession.objects.create(
         id=sid,
         expires_at=timezone.now() + timedelta(seconds=GUEST_TTL_SEC),
-        ton_verify=payload_hash,
         is_active=True,
     )
     token = create_guest_token(

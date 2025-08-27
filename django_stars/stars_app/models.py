@@ -8,9 +8,6 @@ class GuestSession(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     last_seen = models.DateTimeField(auto_now=True)
     expires_at = models.DateTimeField(db_index=True)
-    ton_verify = models.CharField(
-        max_length=128, unique=True, null=False, blank=False, default=""
-    )
     claimed_by_user_id = models.IntegerField(
         null=True, blank=True
     )  # фиксируем, кем поглощена (если надо)
