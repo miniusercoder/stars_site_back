@@ -29,7 +29,7 @@ router = APIRouter()
 GUEST_TTL_SEC = 7 * 24 * 3600  # 7 дней
 
 
-@router.post("/tonconnect", tags=["auth"])
+@router.post("/tonconnect", tags=["auth"], response_model=TokenPair)
 def tonconnect_login(
     proof: TonConnectProof, principal: Principal = Depends(current_principal)
 ):
@@ -65,22 +65,22 @@ def tonconnect_login(
     gs.save(update_fields=["is_active", "claimed_by_user_id"])
 
     # выдаём обычные access/refresh
-    return {
-        "access": create_user_token(
+    return TokenPair(
+        access=create_user_token(
             str(user.pk),
             settings.jwt_secret,
             settings.jwt_alg,
             settings.jwt_access_ttl,
             "access",
         ),
-        "refresh": create_user_token(
+        refresh=create_user_token(
             str(user.pk),
             settings.jwt_secret,
             settings.jwt_alg,
             settings.jwt_refresh_ttl,
             "refresh",
         ),
-    }
+    )
 
 
 @router.post("/refresh", response_model=TokenPair)
