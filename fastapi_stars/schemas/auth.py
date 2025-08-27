@@ -52,6 +52,5 @@ class TonAccount(BaseModel):
 
 
 class TonConnectProof(BaseModel):
-    wallet_address: str
     proof: TonProofResponse
     account: TonAccount
