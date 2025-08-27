@@ -1,4 +1,4 @@
-if True:  # Не сортировать эти импорты
+if True:  # Не сортировать этот импорт
     from fastapi_stars.scripts import init_django  # noqa: F401
 
 from fastapi import FastAPI
@@ -8,7 +8,7 @@ from fastapi_stars.api.routing import api_router
 from fastapi_stars.settings import settings
 
 app = FastAPI(
-    title="stars_site_backend",
+    title="HelperStars Site API",
     version="1.0.0",
     servers=[
         {"url": "https://helperstars.tg", "description": "Production"},

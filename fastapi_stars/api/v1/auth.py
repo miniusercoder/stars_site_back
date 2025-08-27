@@ -107,15 +107,20 @@ def refresh_tokens(body: RefreshIn):
 @router.post("/guest", response_model=GuestTokenOut, tags=["auth"])
 def create_guest():
     sid = str(uuid4())
+    ton_verify_string = str(uuid4())
     GuestSession.objects.create(
         id=sid,
         expires_at=timezone.now() + timedelta(seconds=GUEST_TTL_SEC),
+        ton_verify=ton_verify_string,
         is_active=True,
     )
     token = create_guest_token(
-        settings.jwt_secret, settings.jwt_alg, GUEST_TTL_SEC, sid
+        settings.jwt_secret, settings.jwt_alg, GUEST_TTL_SEC, sid, ton_verify_string
     )
-    return GuestTokenOut(guest=token)
+    return GuestTokenOut(
+        guest=token,
+        ton_verify=ton_verify_string,
+    )
 
 
 @router.get("/session", response_model=SessionValidation, tags=["auth"])

@@ -24,6 +24,7 @@ class RefreshIn(BaseModel):
 
 class GuestTokenOut(BaseModel):
     guest: str  # guest JWT
+    ton_verify: str
 
 
 class SessionValidation(BaseModel):
