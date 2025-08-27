@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     ton_mnemonic: str
     usdt_jetton_address: str = "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs"
 
+    tonconnect_url: str
+    tonconnect_name: str
+    tonconnect_icon_url: str
+
     class Config:
         env_file = ".env"
         extra = "ignore"

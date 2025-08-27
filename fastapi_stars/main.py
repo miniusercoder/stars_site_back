@@ -24,4 +24,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.get("/tonconnect-manifest.json", include_in_schema=False)
+def tonconnect_manifest():
+    return {
+        "url": settings.tonconnect_url,
+        "name": settings.tonconnect_name,
+        "iconUrl": settings.tonconnect_icon_url,
+    }
+
+
 app.include_router(api_router, prefix="/api")
