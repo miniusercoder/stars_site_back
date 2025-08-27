@@ -3,7 +3,7 @@ from uuid import uuid4
 
 from django.utils import timezone
 from fastapi import APIRouter, HTTPException, status, Depends
-from pydantic import BaseModel
+from pytoniq_core import Address, AddressError
 
 from django_stars.stars_app.models import User, GuestSession
 from fastapi_stars.api.deps import Principal, current_principal
@@ -36,7 +36,12 @@ def tonconnect_login(
             detail="Only guest sessions can use TonConnect login",
         )
     # ... верификация TonConnect, поиск/создание AppUser user ...
-    subject = proof.account.address
+    try:
+        subject = Address(proof.account.address).to_str()
+    except AddressError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid wallet address"
+        )
     user, _ = User.objects.get_or_create(wallet_address=subject)
 
     # если пришёл guest_token — переназначаем
