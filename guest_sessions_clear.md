@@ -1,6 +1,6 @@
 Коротко: помечаем истёкшие гостевые сессии «неактивными», даём им «период удержания», и удаляем только те, у которых **нет связанных заказов**. Если заказы были и уже «подняты» на пользователя (guest\_session=NULL), такую сессию тоже можно удалять. Запускаем чистку по cron / systemd-timer’у, маленькими батчами.
 
-Вот рабочая схема под вашу модель `GuestSession(id, expires_at, last_seen, is_active, claimed_by_user_id)` и `Order(user, guest_session)`:
+Вот рабочая схема под вашу модель `GuestSession(id, expires_at, last_seen, is_active, claimed_by_user)` и `Order(user, guest_session)`:
 
 ---
 
@@ -15,7 +15,7 @@
   2. `expires_at < now() - INTERVAL K DAY`
   3. **нет связанных заказов** (`Order.objects.filter(guest_session=gs).exists() == False`)
 
-  Дополнительно: удаляем «поглощённые» сессии (`claimed_by_user_id IS NOT NULL`) даже раньше, *если* у них уже нет связанных заказов (после reassignment вы делаете `Order.update(guest_session=None)`).
+  Дополнительно: удаляем «поглощённые» сессии (`claimed_by_user IS NOT NULL`) даже раньше, *если* у них уже нет связанных заказов (после reassignment вы делаете `Order.update(guest_session=None)`).
 
 > Совет: измените FK у `Order.guest_session` на `on_delete=models.SET_NULL` (не `CASCADE`), чтобы удаление сессии **не** сносило заказы. Ранее мы ставили `CASCADE` — лучше заменить.
 
@@ -148,8 +148,8 @@ systemctl enable --now stars_guest_cleanup.timer
   ```python
   Order.objects.filter(guest_session=gs).update(user=user, guest_session=None)
   gs.is_active = False
-  gs.claimed_by_user_id = user.pk
-  gs.save(update_fields=["is_active","claimed_by_user_id"])
+  gs.claimed_by_user = user
+  gs.save(update_fields=["is_active","claimed_by_user"])
   ```
 
   Тогда такая сессия попадёт под удаление при ближайшей чистке.

@@ -58,8 +58,8 @@ def tonconnect_login(
     #     user=user, guest_session=None
     # )
     gs.is_active = False
-    gs.claimed_by_user_id = user.pk
-    gs.save(update_fields=["is_active", "claimed_by_user_id"])
+    gs.claimed_by_user = user
+    gs.save(update_fields=["is_active", "claimed_by_user"])
 
     # выдаём обычные access/refresh
     return TokenPair(
