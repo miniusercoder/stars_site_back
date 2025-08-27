@@ -46,7 +46,7 @@ class TonProofResponse(BaseModel):
 
 class TonAccount(BaseModel):
     address: str
-    chain: int
+    chain: str
     wallet_state_init: str = Field(None, alias="walletStateInit")
     public_key: str = Field(None, alias="publicKey")
 
