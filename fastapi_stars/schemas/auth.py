@@ -31,15 +31,16 @@ class GuestTokenOut(BaseModel):
 class SessionValidation(BaseModel):
     success: bool
     token_type: Optional[AuthType] = None
+    wallet_address: Optional[str] = None
 
 
 class TonProofDomain(BaseModel):
-    lengthBytes: str
+    lengthBytes: int
     value: str
 
 
 class TonProofResponse(BaseModel):
-    timestamp: str
+    timestamp: int
     domain: TonProofDomain
     signature: str
     payload: str
@@ -47,7 +48,7 @@ class TonProofResponse(BaseModel):
 
 class TonAccount(BaseModel):
     address: str
-    network: str
+    chain: str
     wallet_state_init: str = Field(None, alias="walletStateInit")
     public_key: str = Field(None, alias="publicKey")
 

@@ -37,7 +37,7 @@ def tonconnect_login(
             detail="Only guest sessions can use TonConnect login",
         )
     try:
-        subject = Address(proof.account.address).to_str()
+        subject = Address(proof.account.address)
     except AddressError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid wallet address"
@@ -51,6 +51,7 @@ def tonconnect_login(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid TonConnect proof"
         )
+    subject = subject.to_str()
     user, _ = User.objects.get_or_create(wallet_address=subject)
 
     gs = principal["guest"]
@@ -137,7 +138,13 @@ def validate_session(principal: Principal = Depends(current_principal)):
             return SessionValidation(success=False)
         return SessionValidation(success=True, token_type=principal["kind"])
     elif principal["kind"] == "user":
-        return SessionValidation(success=True, token_type=principal["kind"])
+        return SessionValidation(
+            success=True,
+            token_type=principal["kind"],
+            wallet_address=Address(principal["user"].wallet_address).to_str(
+                is_user_friendly=False
+            ),
+        )
     else:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid session"
