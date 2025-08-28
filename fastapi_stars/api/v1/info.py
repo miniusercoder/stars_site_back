@@ -1,14 +1,22 @@
 from typing import Literal, Tuple, Annotated
 
-from fastapi import APIRouter, Path, HTTPException
+from django.db.models import Sum
+from django.utils import timezone
+from fastapi import APIRouter, Path, HTTPException, Depends
 from redis import Redis
 
-from django_stars.stars_app.models import Price
+from django_stars.stars_app.models import Price, Order
+from fastapi_stars.api.deps import current_principal
+from fastapi_stars.schemas.auth import Principal
 from fastapi_stars.schemas.info import (
     HeaderPrices,
     PricesWithCurrency,
     PriceWithCurrency,
     Item,
+    ProjectStats,
+    TelegramUserResponse,
+    TelegramUserIn,
+    TelegramUser,
 )
 from fastapi_stars.settings import settings
 from integrations.Currencies import TON, USDT
@@ -33,6 +41,81 @@ def _get_premium_price(amount: int) -> Tuple[float, float, float]:
     except Price.DoesNotExist:
         raise HTTPException(400, "Invalid quantity for premium order")
     return price.white_price, price.price, TON.usd_to_ton(price.white_price)
+
+
+@router.get("/project_stats", tags=["info"], response_model=ProjectStats)
+def get_project_stats():
+    cached_stats = r.get("stars_site:project_stats")
+    if cached_stats:
+        return ProjectStats.model_validate_json(cached_stats)
+
+    today_date = timezone.now().date()
+    stars_today = (
+        Order.objects.filter(
+            is_refund=False,
+            create_date__gte=today_date,
+            status=Order.Status.COMPLETED,
+            type=Order.Type.STARS,
+        ).aggregate(Sum("amount"))["amount__sum"]
+        or 0
+    )
+    stars_total = (
+        Order.objects.filter(
+            is_refund=False,
+            status=Order.Status.COMPLETED,
+            type=Order.Type.STARS,
+        ).aggregate(Sum("amount"))["amount__sum"]
+        or 0
+    )
+
+    premium_today = (
+        Order.objects.filter(
+            is_refund=False,
+            create_date__gte=today_date,
+            status=Order.Status.COMPLETED,
+            type=Order.Type.PREMIUM,
+        ).aggregate(Sum("amount"))["amount__sum"]
+        or 0
+    )
+    premium_total = (
+        Order.objects.filter(
+            is_refund=False,
+            status=Order.Status.COMPLETED,
+            type=Order.Type.PREMIUM,
+        ).aggregate(Sum("amount"))["amount__sum"]
+        or 0
+    )
+
+    project_stats = ProjectStats(
+        stars_today=stars_today,
+        stars_total=stars_total,
+        premium_today=premium_today,
+        premium_total=premium_total,
+    )
+
+    r.set("stars_site:project_stats", project_stats.model_dump_json(), ex=60)
+    return project_stats
+
+
+@router.post("/validate_user", tags=["info"], response_model=TelegramUserResponse)
+def validate_telegram_user(
+    user: TelegramUserIn, _: Principal = Depends(current_principal)
+):
+    cached = r.get(f"stars_site:tg_user_{user.id}")
+    if cached:
+        return TelegramUserResponse.model_validate_json(cached)
+
+    fragment = FragmentAPI(get_wallet())
+    try:
+        recipient = fragment.get_stars_recipient(user.username)
+    except ValueError:
+        result = TelegramUserResponse(ok=False)
+    else:
+        result = TelegramUserResponse(
+            ok=True, result=TelegramUser.model_validate(recipient, from_attributes=True)
+        )
+    r.set(f"stars_site:tg_user_{user.id}", result.model_dump_json(), ex=300)
+    return result
 
 
 @router.get("/header_prices", tags=["info"], response_model=HeaderPrices)

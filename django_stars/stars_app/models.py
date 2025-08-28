@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Q
 
 
 class User(models.Model):
@@ -60,3 +61,114 @@ class Price(models.Model):
 
     def __str__(self):
         return f"#{self.id} {self.get_type_display()} - {self.price} USD"
+
+
+class Order(models.Model):
+    class Type(models.IntegerChoices):
+        STARS = 1, "Звёзды"
+        PREMIUM = 2, "Премиум"
+        TON = 3, "TON"
+        TON_WALLET = 4, "TON на кошелёк"
+        GIFT_REGULAR = 5, "Подарок (обычный)"
+
+    class Status(models.IntegerChoices):
+        CANCEL = -1, "Отменен"
+        ERROR = -2, "Ошибка"
+        CREATING = 0, "Создание"
+        CREATED = 1, "Создан"
+        IN_PROGRESS = 2, "В обработке"
+        COMPLETED = 3, "Завершён"
+        BLOCKCHAIN_WAITING = 4, "Ожидание подтверждения в блокчейне"
+
+    id = models.AutoField(primary_key=True, unique=True)
+    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
+    guest_session = models.ForeignKey(
+        GuestSession, null=True, blank=True, on_delete=models.SET_NULL
+    )
+    type = models.IntegerField(
+        choices=Type.choices,
+        verbose_name="Тип заказа",
+    )
+    status = models.IntegerField(
+        choices=Status.choices,
+        default=Status.CREATING,
+        verbose_name="Статус заказа",
+    )
+    amount = models.BigIntegerField(default=0, verbose_name="Количество")
+    create_date = models.DateTimeField(verbose_name="Дата создания", auto_now_add=True)
+    price = models.FloatField(default=0, verbose_name="Цена")
+    price_ton = models.FloatField(default=0, verbose_name="Цена в TON")
+    white_price = models.FloatField(default=0, verbose_name="Цена на сайте")
+    take_in_work = models.DateTimeField(
+        null=True, blank=True, verbose_name="Взято в работу"
+    )
+    is_refund = models.BooleanField(default=False, verbose_name="Возврат")
+    recipient = models.CharField(
+        blank=True,
+        null=True,
+        verbose_name="Получатель",
+        max_length=500,
+    )
+    recipient_username = models.CharField(
+        blank=True,
+        null=True,
+        verbose_name="Никнейм получателя",
+        max_length=500,
+    )
+    referrals_reward = models.FloatField(default=0, verbose_name="Доход рефералов")
+    msg_hash = models.CharField(
+        blank=True,
+        null=True,
+        max_length=255,
+        verbose_name="Хэш сообщения",
+    )
+    ton_sent = models.FloatField(
+        default=0, verbose_name="Отправлено TON", null=True, blank=True
+    )
+    inner_message_hash = models.CharField(
+        blank=True,
+        null=True,
+        verbose_name="Hash внутреннего сообщения",
+        max_length=255,
+        db_index=True,
+    )
+    tx_hash = models.CharField(
+        blank=True,
+        null=True,
+        verbose_name="Хэш транзакции",
+        max_length=255,
+        db_index=True,
+    )
+    anonymous_sent = models.BooleanField(
+        default=False, verbose_name="Анонимно отправлено"
+    )
+
+    class Meta:
+        verbose_name_plural = "Заказы"
+        verbose_name = "Заказ"
+
+        constraints = [
+            # Ровно один из (user, guest_session) должен быть задан
+            models.CheckConstraint(
+                check=(
+                    (Q(user__isnull=False) & Q(guest_session__isnull=True))
+                    | (Q(user__isnull=True) & Q(guest_session__isnull=False))
+                ),
+                name="order_exactly_one_principal",
+            )
+        ]
+
+        indexes = [
+            models.Index(fields=["user", "status"]),
+            models.Index(fields=["status", "create_date"]),
+        ]
+
+    def get_type_display(self):
+        return (
+            self.Type(self.type).label
+            if self.type in self.Type.values
+            else "Неизвестный тип"
+        )
+
+    def __str__(self):
+        return f"#{self.id} {self.get_type_display()} - user #{self.user.tg} ({self.user.username})"
