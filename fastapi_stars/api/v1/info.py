@@ -101,7 +101,7 @@ def get_project_stats():
 def validate_telegram_user(
     user: TelegramUserIn, _: Principal = Depends(current_principal)
 ):
-    cached = r.get(f"stars_site:tg_user_{user.id}")
+    cached = r.get(f"stars_site:tg_user_{user.username}")
     if cached:
         return TelegramUserResponse.model_validate_json(cached)
 
@@ -114,7 +114,7 @@ def validate_telegram_user(
         result = TelegramUserResponse(
             ok=True, result=TelegramUser.model_validate(recipient, from_attributes=True)
         )
-    r.set(f"stars_site:tg_user_{user.id}", result.model_dump_json(), ex=300)
+    r.set(f"stars_site:tg_user_{user.username}", result.model_dump_json(), ex=300)
     return result
 
 
