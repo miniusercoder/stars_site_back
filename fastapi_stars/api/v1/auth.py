@@ -7,7 +7,7 @@ from tonutils.tonconnect.models import TonProof
 from tonutils.tonconnect.utils import generate_proof_payload
 from tonutils.tonconnect.utils.verifiers import verify_ton_proof
 
-from django_stars.stars_app.models import User
+from django_stars.stars_app.models import User, GuestSession
 from fastapi_stars.api.deps import Principal, current_principal
 from fastapi_stars.auth.jwt_utils import (
     create_guest_token,
@@ -53,7 +53,7 @@ def tonconnect_login(
     subject = subject.to_str()
     user, _ = User.objects.get_or_create(wallet_address=subject)
 
-    gs = principal["guest"]
+    gs = GuestSession.objects.get_or_create(pk=principal["payload"]["sid"])[0]
     # Order.objects.filter(guest_session=gs).update(
     #     user=user, guest_session=None
     # )
