@@ -26,18 +26,7 @@ def current_principal(credentials=Depends(security)) -> Principal:
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found"
             )
     elif typ == "guest":
-        sid = payload.get("sid")
-        try:
-            gs = GuestSession.objects.get(pk=sid, is_active=True)
-        except GuestSession.DoesNotExist:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Guest session invalid"
-            )
-        if gs.expires_at <= timezone.now():
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired"
-            )
-        return {"kind": "guest", "guest": gs, "payload": payload}
+        return {"kind": "guest", "payload": payload}
     else:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Unsupported token type"

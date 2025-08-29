@@ -1,4 +1,3 @@
-from datetime import timedelta
 from uuid import uuid4
 
 from django.utils import timezone
@@ -8,7 +7,7 @@ from tonutils.tonconnect.models import TonProof
 from tonutils.tonconnect.utils import generate_proof_payload
 from tonutils.tonconnect.utils.verifiers import verify_ton_proof
 
-from django_stars.stars_app.models import User, GuestSession
+from django_stars.stars_app.models import User
 from fastapi_stars.api.deps import Principal, current_principal
 from fastapi_stars.auth.jwt_utils import (
     create_guest_token,
@@ -116,11 +115,6 @@ def refresh_tokens(body: RefreshIn):
 def create_guest():
     sid = str(uuid4())
     payload_hash = generate_proof_payload()
-    GuestSession.objects.create(
-        id=sid,
-        expires_at=timezone.now() + timedelta(seconds=settings.jwt_guest_ttl),
-        is_active=True,
-    )
     token = create_guest_token(
         settings.jwt_secret, settings.jwt_alg, settings.jwt_guest_ttl, sid, payload_hash
     )

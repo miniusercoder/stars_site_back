@@ -19,8 +19,6 @@ class User(models.Model):
 
 class GuestSession(models.Model):
     id = models.UUIDField(primary_key=True, editable=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    last_seen = models.DateTimeField(auto_now=True)
     expires_at = models.DateTimeField(db_index=True)
     claimed_by_user = models.ForeignKey(
         User,
