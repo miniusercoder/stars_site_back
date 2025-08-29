@@ -1,4 +1,4 @@
-from pydantic import Field
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings
 
 
@@ -7,16 +7,16 @@ class Settings(BaseSettings):
     allowed_origins: list[str] = Field(default_factory=lambda: ["*"])
     stars_markup: int = 9
     gifts_markup: int = 25
-    bot_token: str
+    bot_token: SecretStr
 
-    jwt_secret: str
+    jwt_secret: SecretStr
     jwt_alg: str = "HS256"
     jwt_access_ttl: int = 3600  # 1 час
     jwt_refresh_ttl: int = 30 * 24 * 3600  # 30 дней
     jwt_guest_ttl: int = 7 * 24 * 3600  # 7 дней
 
-    ton_api_key: str
-    ton_mnemonic: str
+    ton_api_key: SecretStr
+    ton_mnemonic: SecretStr
     usdt_jetton_address: str = "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs"
 
     tonconnect_url: str

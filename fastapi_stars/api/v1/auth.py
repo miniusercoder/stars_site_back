@@ -1,6 +1,5 @@
 from uuid import uuid4
 
-from django.utils import timezone
 from fastapi import APIRouter, HTTPException, status, Depends
 from pytoniq_core import Address, AddressError
 from tonutils.tonconnect.models import TonProof

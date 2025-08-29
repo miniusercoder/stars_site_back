@@ -1,8 +1,7 @@
-from django.utils import timezone
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer
 
-from django_stars.stars_app.models import User, GuestSession  # ваша доменная модель
+from django_stars.stars_app.models import User
 from fastapi_stars.auth.jwt_utils import decode_any
 from fastapi_stars.schemas.auth import Principal
 from fastapi_stars.settings import settings
