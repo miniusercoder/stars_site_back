@@ -174,6 +174,16 @@ class Order(models.Model):
         return f"#{self.id} {self.get_type_display()}"
 
 
+class PaymentSystem(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    is_active = models.BooleanField(default=True)
+    access_key = models.CharField(max_length=255, blank=True, null=True)
+    secret_key = models.CharField(max_length=255, blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+
 class Payment(models.Model):
     class Status(models.IntegerChoices):
         CREATED = 0, "Создан"
@@ -189,8 +199,10 @@ class Payment(models.Model):
         null=False,
         blank=False,
     )
-    type = models.CharField(
-        blank=True, null=True, verbose_name="Тип", max_length=500, db_index=True
+    type = models.ForeignKey(
+        PaymentSystem,
+        on_delete=models.SET_NULL,
+        verbose_name="Платёжная система",
     )
     sum = models.FloatField(verbose_name="Сумма")
     currency = models.CharField(default="BTC", verbose_name="Валюта", max_length=20)
