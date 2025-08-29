@@ -24,7 +24,11 @@ class OrderResponse(BaseModel):
     success: bool
     error: (
         Literal[
-            "invalid_amount", "invalid_recipient", "gift_not_found", "internal_error"
+            "invalid_amount",
+            "invalid_recipient",
+            "gift_not_found",
+            "internal_error",
+            "invalid_payment_type",
         ]
         | None
     ) = None
