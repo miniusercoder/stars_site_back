@@ -202,6 +202,9 @@ class Payment(models.Model):
     type = models.ForeignKey(
         PaymentSystem,
         on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        default=None,
         verbose_name="Платёжная система",
     )
     sum = models.FloatField(verbose_name="Сумма")
