@@ -214,10 +214,10 @@ class Payment(models.Model):
         verbose_name_plural = "Платежи"
         verbose_name = "Платеж"
         indexes = [
-            models.Index(fields=["user", "status"]),
+            models.Index(fields=["status"]),
             models.Index(fields=["status", "date"]),
             models.Index(fields=["status", "date", "type"]),
         ]
 
     def __str__(self):
-        return f"#{self.id} - user #{self.user}"
+        return f"#{self.id}"
