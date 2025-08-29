@@ -15,9 +15,20 @@ class PricesWithCurrency(BaseModel):
     price_usd: PriceWithCurrency
 
 
-class OrderResponse(BaseModel):
+class OrderItem(BaseModel):
     order_id: int
     pay_url: str
+
+
+class OrderResponse(BaseModel):
+    success: bool
+    error: (
+        Literal[
+            "invalid_amount", "invalid_recipient", "gift_not_found", "internal_error"
+        ]
+        | None
+    ) = None
+    result: OrderItem | None = None
 
 
 class GiftPayload(TypedDict):
@@ -27,6 +38,7 @@ class GiftPayload(TypedDict):
 class OrderIn(BaseModel):
     item_type: Item = Field(..., alias="type")
     payload: GiftPayload | None = None
+    payment_type: str
     amount: int = Field(
         ...,
         gt=0,
