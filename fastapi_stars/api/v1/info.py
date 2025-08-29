@@ -174,7 +174,7 @@ def get_header_prices():
 
 
 @router.get("/price/{type}/{amount}", response_model=PricesWithCurrency)
-def get_star_price(
+def get_order_price(
     item_type: Annotated[Item, Path(alias="type")],
     amount: Annotated[
         int,
@@ -187,6 +187,7 @@ def get_star_price(
             ),
         ),
     ],
+    _: Principal = Depends(current_principal),
 ):
     if item_type == "star":
         if not (50 <= amount <= 10000):
@@ -252,7 +253,7 @@ def get_star_price(
 
 
 @router.get("/gifts", response_model=GiftsResponse)
-def get_gifts():
+def get_gifts(_: Principal = Depends(current_principal)):
     cached = r.get("stars_site:gifts")
     if cached:
         return GiftsResponse.model_validate_json(cached)
