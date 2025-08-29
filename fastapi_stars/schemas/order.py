@@ -16,7 +16,7 @@ class PricesWithCurrency(BaseModel):
 
 
 class OrderResponse(BaseModel):
-    order_id: str
+    order_id: int
     pay_url: str
 
 

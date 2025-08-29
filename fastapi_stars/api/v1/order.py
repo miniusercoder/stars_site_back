@@ -1,3 +1,6 @@
+import random
+import uuid
+
 from fastapi import APIRouter, Depends
 from redis import Redis
 
@@ -11,4 +14,4 @@ r = Redis(host="localhost", port=6379, decode_responses=True)
 
 @router.post("/create", response_model=OrderResponse)
 def create_order(order_in: OrderIn, _: Principal = Depends(current_principal)):
-    pass
+    return OrderResponse(order_id=random.randint(1, 10000), pay_url="https:///wata.pro")
