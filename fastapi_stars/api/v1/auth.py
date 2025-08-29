@@ -57,9 +57,8 @@ def tonconnect_login(
     # Order.objects.filter(guest_session=gs).update(
     #     user=user, guest_session=None
     # )
-    gs.is_active = False
     gs.claimed_by_user = user
-    gs.save(update_fields=["is_active", "claimed_by_user"])
+    gs.save(update_fields=("claimed_by_user",))
 
     # выдаём обычные access/refresh
     return TokenPair(
