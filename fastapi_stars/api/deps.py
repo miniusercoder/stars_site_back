@@ -10,7 +10,7 @@ security = HTTPBearer(auto_error=True)
 
 
 def current_principal(credentials=Depends(security)) -> Principal:
-    payload = decode_any(credentials.credentials, settings.jwt_secret, settings.jwt_alg)
+    payload = decode_any(credentials.credentials, settings.jwt_secret.get_secret_value(), settings.jwt_alg)
     typ = payload.get("type")
     if typ == "access":
         uid = payload.get("sub")

@@ -4,7 +4,7 @@ from .main import Wallet
 
 def get_wallet() -> Wallet:
     return Wallet(
-        api_key=settings.ton_api_key,
-        mnemonic=settings.ton_mnemonic,
+        api_key=settings.ton_api_key.get_secret_value(),
+        mnemonic=settings.ton_mnemonic.get_secret_value(),
         is_testnet=False,
     )

@@ -63,14 +63,14 @@ def tonconnect_login(
     return TokenPair(
         access=create_user_token(
             str(user.pk),
-            settings.jwt_secret,
+            settings.jwt_secret.get_secret_value(),
             settings.jwt_alg,
             settings.jwt_access_ttl,
             "access",
         ),
         refresh=create_user_token(
             str(user.pk),
-            settings.jwt_secret,
+            settings.jwt_secret.get_secret_value(),
             settings.jwt_alg,
             settings.jwt_refresh_ttl,
             "refresh",
@@ -80,7 +80,7 @@ def tonconnect_login(
 
 @router.post("/refresh", response_model=TokenPair)
 def refresh_tokens(body: RefreshIn):
-    payload = decode_any(body.refresh, settings.jwt_secret, settings.jwt_alg)
+    payload = decode_any(body.refresh, settings.jwt_secret.get_secret_value(), settings.jwt_alg)
     if payload.get("type") != "refresh":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token type"
@@ -94,14 +94,14 @@ def refresh_tokens(body: RefreshIn):
     return TokenPair(
         access=create_user_token(
             user_id,
-            settings.jwt_secret,
+            settings.jwt_secret.get_secret_value(),
             settings.jwt_alg,
             settings.jwt_access_ttl,
             "access",
         ),
         refresh=create_user_token(
             user_id,
-            settings.jwt_secret,
+            settings.jwt_secret.get_secret_value(),
             settings.jwt_alg,
             settings.jwt_refresh_ttl,
             "refresh",
@@ -114,7 +114,7 @@ def create_guest():
     sid = str(uuid4())
     payload_hash = generate_proof_payload()
     token = create_guest_token(
-        settings.jwt_secret, settings.jwt_alg, settings.jwt_guest_ttl, sid, payload_hash
+        settings.jwt_secret.get_secret_value(), settings.jwt_alg, settings.jwt_guest_ttl, sid, payload_hash
     )
     return GuestTokenOut(
         guest=token,

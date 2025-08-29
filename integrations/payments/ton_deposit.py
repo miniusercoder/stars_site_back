@@ -97,7 +97,7 @@ def check_ton_deposits():
 
     headers = {
         "accept": "application/json",
-        "Authorization": f"Bearer {config.ton_api_key}",
+        "Authorization": f"Bearer {config.ton_api_key.get_secret_value()}",
     }
 
     while main_thread().is_alive():
