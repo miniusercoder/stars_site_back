@@ -19,14 +19,12 @@ class User(models.Model):
 
 class GuestSession(models.Model):
     id = models.UUIDField(primary_key=True, editable=False)
-    expires_at = models.DateTimeField(db_index=True)
     claimed_by_user = models.ForeignKey(
         User,
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
     )
-    is_active = models.BooleanField(default=True, db_index=True)
 
 
 class Price(models.Model):
