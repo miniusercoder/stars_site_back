@@ -126,9 +126,6 @@ def create_guest():
 @router.get("/session", response_model=SessionValidation)
 def validate_session(principal: Principal = Depends(current_principal)):
     if principal["kind"] == "guest":
-        gs = principal["guest"]
-        if gs.expires_at <= timezone.now():
-            return SessionValidation(success=False)
         return SessionValidation(success=True, token_type=principal["kind"])
     elif principal["kind"] == "user":
         return SessionValidation(
