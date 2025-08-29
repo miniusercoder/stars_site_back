@@ -120,7 +120,7 @@ def validate_telegram_user(
         result = TelegramUserResponse(success=False, error="not_found")
     else:
         recipient.photo = (
-            re.match(r'"([^"]+)"', recipient.photo)[0] if recipient.photo else None
+            re.findall(r'"([^"]+)"', recipient.photo)[0] if recipient.photo else None
         )
         result = TelegramUserResponse(
             success=True,
