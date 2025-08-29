@@ -171,4 +171,53 @@ class Order(models.Model):
         )
 
     def __str__(self):
-        return f"#{self.id} {self.get_type_display()} - user #{self.user.tg} ({self.user.username})"
+        return f"#{self.id} {self.get_type_display()}"
+
+
+class Payment(models.Model):
+    class Status(models.IntegerChoices):
+        CREATED = 0, "Создан"
+        CONFIRMED = 1, "Подтверждён"
+        CANCELLED = 2, "Отменён"
+        ERROR = -1, "Ошибка"
+
+    id = models.CharField(
+        unique=True,
+        verbose_name="ID",
+        max_length=64,
+        primary_key=True,
+        null=False,
+        blank=False,
+    )
+    type = models.CharField(
+        blank=True, null=True, verbose_name="Тип", max_length=500, db_index=True
+    )
+    sum = models.FloatField(verbose_name="Сумма")
+    currency = models.CharField(default="BTC", verbose_name="Валюта", max_length=20)
+    status = models.IntegerField(verbose_name="Статус", db_index=True)
+    order = models.ForeignKey(
+        Order,
+        on_delete=models.SET_NULL,
+        verbose_name="Заказ",
+    )
+    payment_id = models.CharField(
+        blank=True,
+        null=True,
+        verbose_name="ID платежа (служебный)",
+        max_length=500,
+        db_index=True,
+    )
+    date = models.DateTimeField(verbose_name="Дата платежа", db_index=True)
+    message_id = models.BigIntegerField(null=True, blank=True)
+
+    class Meta:
+        verbose_name_plural = "Платежи"
+        verbose_name = "Платеж"
+        indexes = [
+            models.Index(fields=["user", "status"]),
+            models.Index(fields=["status", "date"]),
+            models.Index(fields=["status", "date", "type"]),
+        ]
+
+    def __str__(self):
+        return f"#{self.id} - user #{self.user}"

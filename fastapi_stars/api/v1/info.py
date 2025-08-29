@@ -2,7 +2,7 @@ from typing import Literal, Tuple, Annotated
 
 from django.db.models import Sum
 from django.utils import timezone
-from fastapi import APIRouter, Path, HTTPException, Depends
+from fastapi import APIRouter, Path, HTTPException, Depends, status
 from redis import Redis
 
 from django_stars.stars_app.models import Price, Order
@@ -29,7 +29,9 @@ r = Redis(host="localhost", port=6379, decode_responses=True)
 
 def _get_premium_price(amount: int) -> Tuple[float, float, float]:
     if amount not in {3, 6, 12}:
-        raise HTTPException(400, "Invalid quantity for premium order")
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST, "Invalid quantity for premium order"
+        )
     amount: Literal[3, 6, 12]
     try:
         if amount == 3:
@@ -39,7 +41,9 @@ def _get_premium_price(amount: int) -> Tuple[float, float, float]:
         elif amount == 12:
             price = Price.objects.get(type=Price.Type.PREMIUM_12)
     except Price.DoesNotExist:
-        raise HTTPException(400, "Invalid quantity for premium order")
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST, "Invalid quantity for premium order"
+        )
     return price.white_price, price.price, TON.usd_to_ton(price.white_price)
 
 
@@ -93,7 +97,7 @@ def get_project_stats():
         premium_total=premium_total,
     )
 
-    r.set("stars_site:project_stats", project_stats.model_dump_json(), ex=60)
+    r.set("stars_site:project_stats", project_stats.model_dump_json(), ex=600)
     return project_stats
 
 
@@ -109,10 +113,11 @@ def validate_telegram_user(
     try:
         recipient = fragment.get_stars_recipient(user.username)
     except ValueError:
-        result = TelegramUserResponse(ok=False)
+        result = TelegramUserResponse(success=False, error="not_found")
     else:
         result = TelegramUserResponse(
-            ok=True, result=TelegramUser.model_validate(recipient, from_attributes=True)
+            success=True,
+            result=TelegramUser.model_validate(recipient, from_attributes=True),
         )
     r.set(f"stars_site:tg_user_{user.username}", result.model_dump_json(), ex=300)
     return result

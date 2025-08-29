@@ -35,7 +35,7 @@ def current_principal(credentials=Depends(security)) -> Principal:
             )
         if gs.expires_at <= timezone.now():
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Guest session expired"
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired"
             )
         return {"kind": "guest", "guest": gs, "payload": payload}
     else:
