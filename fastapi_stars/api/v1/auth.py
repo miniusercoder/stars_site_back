@@ -27,7 +27,7 @@ from fastapi_stars.settings import settings
 router = APIRouter()
 
 
-@router.post("/tonconnect", tags=["auth"], response_model=TokenPair)
+@router.post("/tonconnect", response_model=TokenPair)
 def tonconnect_login(
     proof: TonConnectProof, principal: Principal = Depends(current_principal)
 ):
@@ -112,7 +112,7 @@ def refresh_tokens(body: RefreshIn):
     )
 
 
-@router.post("/guest", response_model=GuestTokenOut, tags=["auth"])
+@router.post("/guest", response_model=GuestTokenOut)
 def create_guest():
     sid = str(uuid4())
     payload_hash = generate_proof_payload()
@@ -130,7 +130,7 @@ def create_guest():
     )
 
 
-@router.get("/session", response_model=SessionValidation, tags=["auth"])
+@router.get("/session", response_model=SessionValidation)
 def validate_session(principal: Principal = Depends(current_principal)):
     if principal["kind"] == "guest":
         gs = principal["guest"]

@@ -51,7 +51,7 @@ def _get_premium_price(amount: int) -> Tuple[float, float, float]:
     return price.white_price, price.price, TON.usd_to_ton(price.white_price)
 
 
-@router.get("/project_stats", tags=["info"], response_model=ProjectStats)
+@router.get("/project_stats", response_model=ProjectStats)
 def get_project_stats():
     cached_stats = r.get("stars_site:project_stats")
     if cached_stats:
@@ -105,7 +105,7 @@ def get_project_stats():
     return project_stats
 
 
-@router.post("/validate_user", tags=["info"], response_model=TelegramUserResponse)
+@router.post("/validate_user", response_model=TelegramUserResponse)
 def validate_telegram_user(
     user: TelegramUserIn, _: Principal = Depends(current_principal)
 ):
@@ -130,7 +130,7 @@ def validate_telegram_user(
     return result
 
 
-@router.get("/header_prices", tags=["info"], response_model=HeaderPrices)
+@router.get("/header_prices", response_model=HeaderPrices)
 def get_header_prices():
     cached_prices = r.get("stars_site:base_prices")
     if cached_prices:
@@ -173,7 +173,7 @@ def get_header_prices():
     return prices
 
 
-@router.get("/price/{type}/{amount}", tags=["info"], response_model=PricesWithCurrency)
+@router.get("/price/{type}/{amount}", response_model=PricesWithCurrency)
 def get_star_price(
     item_type: Annotated[Item, Path(alias="type")],
     amount: Annotated[
@@ -251,7 +251,7 @@ def get_star_price(
         return prices
 
 
-@router.get("/gifts", tags=["info"], response_model=GiftsResponse)
+@router.get("/gifts", response_model=GiftsResponse)
 def get_gifts():
     cached = r.get("stars_site:gifts")
     if cached:
