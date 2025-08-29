@@ -45,3 +45,13 @@ class TelegramUserResponse(BaseModel):
     success: bool
     error: Literal["not_found"] | None = None
     result: TelegramUser | None = None
+
+
+class GiftModel(BaseModel):
+    id: str
+    emoji: str
+    prices: PricesWithCurrency
+
+
+class GiftsResponse(BaseModel):
+    gifts: list[GiftModel]

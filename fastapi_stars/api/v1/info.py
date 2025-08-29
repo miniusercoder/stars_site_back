@@ -1,3 +1,4 @@
+import re
 from typing import Literal, Tuple, Annotated
 
 from django.db.models import Sum
@@ -17,10 +18,13 @@ from fastapi_stars.schemas.info import (
     TelegramUserResponse,
     TelegramUserIn,
     TelegramUser,
+    GiftsResponse,
+    GiftModel,
 )
 from fastapi_stars.settings import settings
 from integrations.Currencies import TON, USDT
 from integrations.fragment import FragmentAPI
+from integrations.telegram_bot import bot
 from integrations.wallet.helpers import get_wallet
 
 router = APIRouter()
@@ -115,6 +119,9 @@ def validate_telegram_user(
     except ValueError:
         result = TelegramUserResponse(success=False, error="not_found")
     else:
+        recipient.photo = (
+            re.match(r'"([^"]+)"', recipient.photo)[0] if recipient.photo else None
+        )
         result = TelegramUserResponse(
             success=True,
             result=TelegramUser.model_validate(recipient, from_attributes=True),
@@ -242,3 +249,39 @@ def get_star_price(
             price_rub=PriceWithCurrency(currency="rub", price=ton_price_in_rub),
         )
         return prices
+
+
+@router.get("/gifts", tags=["info"], response_model=GiftsResponse)
+def get_gifts():
+    cached = r.get("stars_site:gifts")
+    if cached:
+        return GiftsResponse.model_validate_json(cached)
+
+    fragment = FragmentAPI(get_wallet())
+    price_for_500_stars = fragment.get_stars_price(500).usd
+    price_per_star = price_for_500_stars / 500
+    gifts = bot.get_available_gifts().gifts
+    gifts = filter(lambda x: x.id in settings.available_gifts, gifts)
+    gifts = sorted(gifts, key=lambda x: x.star_count)
+
+    result = []
+
+    for gift in gifts:
+        gift_price = gift.star_count * price_per_star
+        gift_price = round(gift_price + gift_price / 100 * settings.gifts_markup, 2)
+        gift_price_rub = USDT.usd_to_rub(gift_price)
+
+        result.append(
+            GiftModel(
+                id=gift.id,
+                emoji=gift.sticker.emoji,
+                prices=PricesWithCurrency(
+                    price_usd=PriceWithCurrency(currency="usd", price=gift_price),
+                    price_rub=PriceWithCurrency(currency="rub", price=gift_price_rub),
+                ),
+            )
+        )
+
+    gifts_response = GiftsResponse(gifts=result)
+    r.set("stars_site:gifts", gifts_response.model_dump_json(), ex=600)
+    return gifts_response

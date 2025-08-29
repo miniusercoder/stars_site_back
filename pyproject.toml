@@ -13,6 +13,7 @@ dependencies = [
     "mysqlclient>=2.2.7",
     "pydantic-settings>=2.10.1",
     "pyjwt>=2.10.1",
+    "pytelegrambotapi>=4.28.0",
     "python-dotenv>=1.1.1",
     "pythoniq>=0.0.1",
     "redis>=6.4.0",
