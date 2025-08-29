@@ -212,6 +212,9 @@ class Payment(models.Model):
     status = models.IntegerField(verbose_name="Статус", db_index=True)
     order = models.ForeignKey(
         Order,
+        null=True,
+        blank=True,
+        default=None,
         on_delete=models.SET_NULL,
         verbose_name="Заказ",
     )
