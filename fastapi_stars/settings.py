@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     allowed_origins: list[str] = Field(default_factory=lambda: ["*"])
     stars_markup: int = 9
     gifts_markup: int = 25
+    ton_markup: int = 10
     bot_token: SecretStr
     site_url: str = "https://helperstars.tg"
 

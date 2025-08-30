@@ -37,6 +37,7 @@ class OrderResponse(BaseModel):
             "invalid_recipient",
             "gift_not_found",
             "internal_error",
+            "payment_creation_failed",
             "invalid_payment_type",
         ]
         | None
