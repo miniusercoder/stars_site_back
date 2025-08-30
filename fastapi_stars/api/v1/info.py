@@ -295,7 +295,7 @@ def available_payment_methods(
     amount: Annotated[float, Query(ge=0, description="Сумма в USD")],
 ):
     methods = PaymentMethod.objects.filter(
-        system__is_active=True, min_amount__gte=amount
+        system__is_active=True, min_amount__lte=amount
     )
     return PaymentMethodsResponse(
         methods=[
