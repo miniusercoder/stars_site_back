@@ -302,7 +302,7 @@ def available_payment_methods(
             PaymentMethodModel(
                 id=m.id,
                 name=m.name,
-                icon=f"{settings.media_url}{m.icon.url}" if m.icon else None,
+                icon=f"{settings.site_url}{m.icon.url}" if m.icon else None,
             )
             for m in methods
         ]
