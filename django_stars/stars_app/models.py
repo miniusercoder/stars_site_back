@@ -3,7 +3,7 @@ from django.db.models import Q
 
 
 class User(models.Model):
-    wallet_address = models.CharField(max_length=128, unique=True)
+    wallet_address = models.CharField(max_length=128, unique=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     referrer = models.ForeignKey(
         "self",
@@ -12,6 +12,10 @@ class User(models.Model):
         on_delete=models.SET_NULL,
         related_name="referrals",
     )
+
+    class Meta:
+        verbose_name_plural = "Пользователи"
+        verbose_name = "Пользователь"
 
     def __str__(self):
         return self.wallet_address
@@ -25,6 +29,10 @@ class GuestSession(models.Model):
         blank=True,
         on_delete=models.SET_NULL,
     )
+
+    class Meta:
+        verbose_name_plural = "Гостевые сессии"
+        verbose_name = "Гостевая сессия"
 
 
 class Price(models.Model):
@@ -176,6 +184,10 @@ class PaymentSystem(models.Model):
     access_key = models.CharField(max_length=255, blank=True, null=True)
     secret_key = models.CharField(max_length=255, blank=True, null=True)
 
+    class Meta:
+        verbose_name_plural = "Платёжные системы"
+        verbose_name = "Платёжная система"
+
     def __str__(self):
         return self.name
 
@@ -190,6 +202,8 @@ class PaymentMethod(models.Model):
     min_amount = models.FloatField(default=0)
 
     class Meta:
+        verbose_name_plural = "Методы оплаты"
+        verbose_name = "Метод оплаты"
         unique_together = ("system", "name", "currency")
 
     def __str__(self):
