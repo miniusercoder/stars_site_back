@@ -235,21 +235,15 @@ class Payment(models.Model):
     type = models.ForeignKey(
         PaymentSystem,
         on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        default=None,
         verbose_name="Платёжная система",
     )
     sum = models.FloatField(verbose_name="Сумма")
-    currency = models.CharField(default="BTC", verbose_name="Валюта", max_length=20)
     status = models.IntegerField(verbose_name="Статус", db_index=True)
     order = models.ForeignKey(
         Order,
-        null=True,
-        blank=True,
-        default=None,
         on_delete=models.SET_NULL,
         verbose_name="Заказ",
+        related_name="payment",
     )
     payment_id = models.CharField(
         blank=True,
@@ -259,7 +253,6 @@ class Payment(models.Model):
         db_index=True,
     )
     created_at = models.DateTimeField(verbose_name="Дата платежа", db_index=True)
-    message_id = models.BigIntegerField(null=True, blank=True)
 
     class Meta:
         verbose_name_plural = "Платежи"

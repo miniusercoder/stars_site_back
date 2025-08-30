@@ -2,7 +2,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-type Item = Literal["star", "premium", "ton"]
+type Item = Literal["star", "premium", "ton", "gift"]
 
 
 class PriceWithCurrency(BaseModel):
