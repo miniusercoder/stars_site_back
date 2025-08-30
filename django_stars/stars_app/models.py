@@ -204,7 +204,7 @@ class PaymentMethod(models.Model):
     class Meta:
         verbose_name_plural = "Методы оплаты"
         verbose_name = "Метод оплаты"
-        unique_together = ("system", "name", "currency")
+        unique_together = ("system", "name", "min_amount")
 
     def __str__(self):
         return f"{self.system.name} - {self.name}"

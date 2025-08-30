@@ -22,7 +22,7 @@ def check_day_orders():
 
     orders = Order.objects.filter(
         status=Order.Status.COMPLETED,
-        create_date__gte=tz.localtime() - timedelta(days=2),
+        created_at__gte=tz.localtime() - timedelta(days=2),
     ).order_by("-id")
     logger.info(f"Checking {orders.count()} completed orders from the last day.")
 

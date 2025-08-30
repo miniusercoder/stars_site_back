@@ -61,7 +61,7 @@ def get_project_stats():
     stars_today = (
         Order.objects.filter(
             is_refund=False,
-            create_date__gte=today_date,
+            created_at__gte=today_date,
             status=Order.Status.COMPLETED,
             type=Order.Type.STARS,
         ).aggregate(Sum("amount"))["amount__sum"]
@@ -79,7 +79,7 @@ def get_project_stats():
     premium_today = (
         Order.objects.filter(
             is_refund=False,
-            create_date__gte=today_date,
+            created_at__gte=today_date,
             status=Order.Status.COMPLETED,
             type=Order.Type.PREMIUM,
         ).aggregate(Sum("amount"))["amount__sum"]
