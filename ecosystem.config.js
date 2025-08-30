@@ -1,10 +1,10 @@
 module.exports = {
     apps: [
         {
-            name: "start_site_backend",
+            name: "stars_site_backend",
             script: "./start_backend.sh"
         }, {
-            name: "start_site_admin",
+            name: "stars_site_admin",
             script: "./start_admin.sh"
         }
     ]
