@@ -235,6 +235,8 @@ class Payment(models.Model):
     type = models.ForeignKey(
         PaymentSystem,
         on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         verbose_name="Платёжная система",
     )
     sum = models.FloatField(verbose_name="Сумма")
@@ -242,6 +244,8 @@ class Payment(models.Model):
     order = models.ForeignKey(
         Order,
         on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         verbose_name="Заказ",
         related_name="payment",
     )
