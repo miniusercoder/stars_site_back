@@ -17,7 +17,16 @@ class PricesWithCurrency(BaseModel):
 
 class OrderItem(BaseModel):
     order_id: int
-    pay_url: str
+    pay_url: str | None
+    ton_transaction: str | None
+
+    @classmethod
+    def validate(cls, value):
+        if not (value.get("pay_url") or value.get("ton_transaction")):
+            raise ValueError(
+                "Должен быть задан хотя бы один из pay_url или ton_transaction"
+            )
+        return value
 
 
 class OrderResponse(BaseModel):
