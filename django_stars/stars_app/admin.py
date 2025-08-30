@@ -1,6 +1,13 @@
 from django.contrib import admin
 
-from django_stars.stars_app.models import Price, User, Order, PaymentSystem, Payment
+from django_stars.stars_app.models import (
+    Price,
+    User,
+    Order,
+    PaymentSystem,
+    Payment,
+    PaymentMethod,
+)
 
 
 @admin.register(Price)
@@ -41,3 +48,9 @@ class PaymentAdmin(admin.ModelAdmin):
     list_display = ("id", "order", "sum", "status", "created_at")
     search_fields = ("order__id",)
     list_filter = ("status", "created_at")
+
+
+@admin.register(PaymentMethod)
+class PaymentMethodAdmin(admin.ModelAdmin):
+    list_display = ("system", "name", "min_amount")
+    search_fields = ("name", "system__name")

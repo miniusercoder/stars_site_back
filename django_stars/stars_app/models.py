@@ -180,6 +180,22 @@ class PaymentSystem(models.Model):
         return self.name
 
 
+class PaymentMethod(models.Model):
+    system = models.ForeignKey(
+        PaymentSystem,
+        on_delete=models.CASCADE,
+        related_name="methods",
+    )
+    name = models.CharField(max_length=100)
+    min_amount = models.FloatField(default=0)
+
+    class Meta:
+        unique_together = ("system", "name", "currency")
+
+    def __str__(self):
+        return f"{self.system.name} - {self.name}"
+
+
 class Payment(models.Model):
     class Status(models.IntegerChoices):
         CREATED = 0, "Создан"
