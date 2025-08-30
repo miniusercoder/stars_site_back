@@ -91,7 +91,7 @@ class Order(models.Model):
         verbose_name="Статус заказа",
     )
     amount = models.BigIntegerField(default=0, verbose_name="Количество")
-    create_date = models.DateTimeField(verbose_name="Дата создания", auto_now_add=True)
+    created_at = models.DateTimeField(verbose_name="Дата создания", auto_now_add=True)
     price = models.FloatField(default=0, verbose_name="Цена")
     price_ton = models.FloatField(default=0, verbose_name="Цена в TON")
     white_price = models.FloatField(default=0, verbose_name="Цена на сайте")
@@ -156,7 +156,7 @@ class Order(models.Model):
 
         indexes = [
             models.Index(fields=["user", "status"]),
-            models.Index(fields=["status", "create_date"]),
+            models.Index(fields=["status", "created_at"]),
         ]
 
     def get_type_display(self):
@@ -221,7 +221,7 @@ class Payment(models.Model):
         max_length=500,
         db_index=True,
     )
-    date = models.DateTimeField(verbose_name="Дата платежа", db_index=True)
+    created_at = models.DateTimeField(verbose_name="Дата платежа", db_index=True)
     message_id = models.BigIntegerField(null=True, blank=True)
 
     class Meta:
@@ -229,8 +229,8 @@ class Payment(models.Model):
         verbose_name = "Платеж"
         indexes = [
             models.Index(fields=["status"]),
-            models.Index(fields=["status", "date"]),
-            models.Index(fields=["status", "date", "type"]),
+            models.Index(fields=["status", "created_at"]),
+            models.Index(fields=["status", "created_at", "type"]),
         ]
 
     def __str__(self):

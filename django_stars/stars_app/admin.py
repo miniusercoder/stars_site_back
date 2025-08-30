@@ -20,7 +20,7 @@ class UserAdmin(admin.ModelAdmin):
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ("id", "user", "type", "status", "created_at", "updated_at")
+    list_display = ("id", "user", "type", "status", "created_at")
     search_fields = (
         "id",
         "user__wallet_address",
@@ -38,6 +38,6 @@ class PaymentSystemAdmin(admin.ModelAdmin):
 
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
-    list_display = ("id", "order", "amount", "status", "created_at")
+    list_display = ("id", "order", "sum", "status", "created_at")
     search_fields = ("order__id",)
     list_filter = ("status", "created_at")
