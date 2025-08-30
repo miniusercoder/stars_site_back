@@ -200,6 +200,13 @@ class PaymentMethod(models.Model):
     )
     name = models.CharField(max_length=100)
     min_amount = models.FloatField(default=0)
+    icon = models.ImageField(
+        upload_to="payment_methods/",
+        null=True,
+        blank=True,
+        default=None,
+        verbose_name="Иконка метода оплаты",
+    )
 
     class Meta:
         verbose_name_plural = "Методы оплаты"

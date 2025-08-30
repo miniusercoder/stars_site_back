@@ -55,3 +55,13 @@ class GiftModel(BaseModel):
 
 class GiftsResponse(BaseModel):
     gifts: list[GiftModel]
+
+
+class PaymentMethodModel(BaseModel):
+    id: int
+    name: str
+    icon: str | None = None
+
+
+class PaymentMethodsResponse(BaseModel):
+    methods: list[PaymentMethodModel]

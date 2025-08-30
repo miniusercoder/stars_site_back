@@ -42,7 +42,7 @@ class GiftPayload(TypedDict):
 class OrderIn(BaseModel):
     item_type: Item = Field(..., alias="type")
     payload: GiftPayload | None = None
-    payment_type: str
+    payment_method: int
     amount: int = Field(
         ...,
         gt=0,

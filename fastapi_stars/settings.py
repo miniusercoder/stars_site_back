@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     stars_markup: int = 9
     gifts_markup: int = 25
     bot_token: SecretStr
+    media_url: str = "https://helperstars.tg/media/"
 
     jwt_secret: SecretStr
     jwt_alg: str = "HS256"

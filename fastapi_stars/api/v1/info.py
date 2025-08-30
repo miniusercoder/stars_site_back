@@ -3,10 +3,10 @@ from typing import Literal, Tuple, Annotated
 
 from django.db.models import Sum
 from django.utils import timezone
-from fastapi import APIRouter, Path, HTTPException, Depends, status
+from fastapi import APIRouter, Path, HTTPException, Depends, status, Query
 from redis import Redis
 
-from django_stars.stars_app.models import Price, Order
+from django_stars.stars_app.models import Price, Order, PaymentMethod
 from fastapi_stars.api.deps import current_principal
 from fastapi_stars.schemas.auth import Principal
 from fastapi_stars.schemas.info import (
@@ -20,6 +20,8 @@ from fastapi_stars.schemas.info import (
     TelegramUser,
     GiftsResponse,
     GiftModel,
+    PaymentMethodsResponse,
+    PaymentMethodModel,
 )
 from fastapi_stars.settings import settings
 from integrations.Currencies import TON, USDT
@@ -286,3 +288,22 @@ def get_gifts(_: Principal = Depends(current_principal)):
     gifts_response = GiftsResponse(gifts=result)
     r.set("stars_site:gifts", gifts_response.model_dump_json(), ex=600)
     return gifts_response
+
+
+@router.get("/available_payment_methods", response_model=PaymentMethodsResponse)
+def available_payment_methods(
+    amount: Annotated[float, Query(ge=0, description="Сумма в USD")],
+):
+    methods = PaymentMethod.objects.filter(
+        system__is_active=True, min_amount__gte=amount
+    )
+    return PaymentMethodsResponse(
+        methods=[
+            PaymentMethodModel(
+                id=m.id,
+                name=m.name,
+                icon=f"{settings.api_url}{m.icon.url}" if m.icon else None,
+            )
+            for m in methods
+        ]
+    )
