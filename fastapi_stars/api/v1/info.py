@@ -316,7 +316,7 @@ def get_gifts(_: Principal = Depends(current_principal)):
 @router.get("/available_payment_methods", response_model=PaymentMethodsResponse)
 def available_payment_methods(
     amount: Annotated[float, Query(ge=0, description="Сумма в USD")],
-    order_type: Annotated[Item, Query(description="Тип заказа")] = "star",
+    order_type: Annotated[Item, Query(description="Тип заказа", alias="type")] = "star",
     principal: Principal = Depends(current_principal),
 ):
     if order_type == "ton" and principal["kind"] != "user":
