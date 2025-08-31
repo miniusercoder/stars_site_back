@@ -35,6 +35,10 @@ def create_order(order_in: OrderIn, principal: Principal = Depends(current_princ
     ton_methods = list(
         PaymentMethod.objects.filter(system__name="TON").values_list("id", flat=True)
     )
+    order_price = 0.0
+    white_price = 0.0
+    order_payload = {}
+    order_type = None
     match order_in.item_type:
         case "star":
             if not (50 <= order_in.amount <= 10000):
@@ -89,6 +93,8 @@ def create_order(order_in: OrderIn, principal: Principal = Depends(current_princ
             order_type = Order.Type.GIFT_REGULAR
         case _:
             assert_never(order_in.item_type)
+    if not order_type:
+        return OrderResponse(success=False, error="internal_error")
     order = Order.objects.create(
         user=user,
         guest_session=gs,
