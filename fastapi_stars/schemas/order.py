@@ -17,8 +17,8 @@ class PricesWithCurrency(BaseModel):
 
 class OrderItem(BaseModel):
     order_id: int
-    pay_url: str | None
-    ton_transaction: str | None
+    pay_url: str | None = None
+    ton_transaction: str | None = None
 
     @classmethod
     def validate(cls, value):
@@ -38,7 +38,7 @@ class OrderResponse(BaseModel):
             "gift_not_found",
             "internal_error",
             "payment_creation_failed",
-            "invalid_payment_type",
+            "invalid_payment_method",
         ]
         | None
     ) = None

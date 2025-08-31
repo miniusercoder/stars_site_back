@@ -146,6 +146,12 @@ class Order(models.Model):
     anonymous_sent = models.BooleanField(
         default=False, verbose_name="Анонимно отправлено"
     )
+    payload = models.JSONField(
+        blank=True,
+        null=True,
+        verbose_name="Дополнительные данные",
+        default=dict,
+    )
 
     class Meta:
         verbose_name_plural = "Заказы"

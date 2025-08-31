@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     jwt_refresh_ttl: int = 30 * 24 * 3600  # 30 дней
     jwt_guest_ttl: int = 7 * 24 * 3600  # 7 дней
 
+    telegram_api_id: int
+    telegram_api_hash: SecretStr
+
     ton_api_key: SecretStr
     ton_mnemonic: SecretStr
     usdt_jetton_address: str = "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs"
