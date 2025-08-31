@@ -75,7 +75,7 @@ def create_order(order_in: OrderIn, principal: Principal = Depends(current_princ
             gift = gifts[0]
             if not get_gift_sender().validate_recipient(order_in.recipient):
                 return OrderResponse(success=False, error="invalid_recipient")
-            _, white_price = get_stars_price(500)[1] / 500
+            white_price = get_stars_price(500)[1] / 500
             white_price = gift.star_count * white_price
             order_price = round(
                 white_price + white_price / 100 * settings.gifts_markup, 2
