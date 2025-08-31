@@ -19,6 +19,7 @@ dependencies = [
     "pythoniq>=0.0.1",
     "redis>=6.4.0",
     "tonutils>=0.5.2",
+    "ujson>=5.11.0",
     "uvicorn[standard]>=0.35.0",
 ]
 

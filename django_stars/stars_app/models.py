@@ -189,6 +189,7 @@ class PaymentSystem(models.Model):
         CRYPTOPAY = "cryptopay", "CryptoPay"
         CARDLINK = "cardlink", "CardLink"
         TON_CONNECT = "ton_connect", "TonConnect"
+        HELEKET = "heleket", "Heleket"
 
     name = models.CharField(max_length=100, unique=True, choices=Names.choices)
     shop_id = models.CharField(max_length=255, blank=True, null=True)

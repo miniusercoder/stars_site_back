@@ -3,6 +3,7 @@ from fastapi_stars.settings import settings
 from integrations.Currencies import USDT
 from integrations.Merchants.Cardlink import CardLink
 from integrations.Merchants.CryptoPay import CryptoPay
+from integrations.Merchants.Heleket import Heleket
 
 
 def generate_pay_link(order: Order):
@@ -24,6 +25,13 @@ def generate_pay_link(order: Order):
             )
             amount = USDT.usd_to_rub(order.price)
             link = cardlink.create_bill(payment.id, amount)
+        case payment.method.system.Names.HELEKET:
+            heleket = Heleket(
+                payment.method.system.shop_id, payment.method.system.access_key
+            )
+            link = heleket.create_bill(
+                payment.id, order.price, settings.pay_success_url
+            )
     if link and link.status:
         payment.payment_id = link.id
         payment.save(update_fields=("payment_id",))
