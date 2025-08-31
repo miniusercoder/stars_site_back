@@ -4,6 +4,7 @@ from typing import Annotated, assert_never
 from django.db.models import Sum, Q
 from django.utils import timezone
 from fastapi import APIRouter, Path, HTTPException, Depends, status, Query
+from loguru import logger
 from redis import Redis
 
 from django_stars.stars_app.models import Order, PaymentMethod
@@ -333,14 +334,6 @@ def available_payment_methods(
         ton_methods = PaymentMethod.objects.filter(
             system__name="TonConnect", system__is_active=True, min_amount__lte=amount
         )
-        try:
-            get_jetton_wallet(
-                principal["user"].wallet_address, settings.usdt_jetton_address
-            )
-        except ValueError:
-            ton_methods = ton_methods.filter(~Q(name__icontains="usdt"))
-        else:
-            pass
         methods = methods | ton_methods
     if order_type == "ton":
         methods = methods.filter(system__name="TonConnect")
