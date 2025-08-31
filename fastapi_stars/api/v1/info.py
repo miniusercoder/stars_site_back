@@ -1,7 +1,7 @@
 import re
 from typing import Annotated, assert_never
 
-from django.db.models import Sum
+from django.db.models import Sum, Q
 from django.utils import timezone
 from fastapi import APIRouter, Path, HTTPException, Depends, status, Query
 from redis import Redis
@@ -25,6 +25,7 @@ from fastapi_stars.schemas.info import (
 )
 from fastapi_stars.settings import settings
 from fastapi_stars.utils.prices import get_stars_price, get_premium_price, get_ton_price
+from fastapi_stars.utils.tc_messages import get_jetton_wallet
 from integrations.Currencies import TON, USDT
 from integrations.fragment import FragmentAPI
 from integrations.gifts import get_gift_sender
@@ -315,10 +316,34 @@ def get_gifts(_: Principal = Depends(current_principal)):
 @router.get("/available_payment_methods", response_model=PaymentMethodsResponse)
 def available_payment_methods(
     amount: Annotated[float, Query(ge=0, description="Сумма в USD")],
+    order_type: Annotated[Item, Query(description="Тип заказа")] = "star",
+    principal: Principal = Depends(current_principal),
 ):
+    if order_type == "ton" and principal["kind"] != "user":
+        raise HTTPException(
+            status_code=403,
+            detail="Access forbidden: only user can use 'ton' order type",
+        )
     methods = PaymentMethod.objects.filter(
-        system__is_active=True, min_amount__lte=amount
+        ~Q(system__name="TonConnect"),
+        system__is_active=True,
+        min_amount__lte=amount,
     )
+    if principal["kind"] == "user":
+        ton_methods = PaymentMethod.objects.filter(
+            system__name="TonConnect", system__is_active=True, min_amount__lte=amount
+        )
+        try:
+            get_jetton_wallet(
+                principal["user"].wallet_address, settings.usdt_jetton_address
+            )
+        except ValueError:
+            ton_methods = ton_methods.filter(~Q(name__icontains="usdt"))
+        else:
+            pass
+        methods = methods | ton_methods
+    if order_type == "ton":
+        methods = methods.filter(system__name="TonConnect")
     return PaymentMethodsResponse(
         methods=[
             PaymentMethodModel(

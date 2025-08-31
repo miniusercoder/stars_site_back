@@ -126,6 +126,11 @@ def create_order(order_in: OrderIn, principal: Principal = Depends(current_princ
             amount=price_to_send,
             transfer_type=transaction_type,  # type: ignore
         )
+        if "error" in ton_transaction:
+            logger.error(
+                f"Error creating TonConnect message: {ton_transaction['error']}"
+            )
+            return OrderResponse(success=False, error="payment_creation_failed")
         pay_url = None
     else:
         ton_transaction = None

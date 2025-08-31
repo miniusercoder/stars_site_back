@@ -13,6 +13,21 @@ from fastapi_stars.settings import settings
 from integrations.wallet.helpers import get_wallet
 
 
+def get_jetton_wallet(owner_address: Address | str, jetton_master: str):
+    try:
+        user_jetton_wallet_address = asyncio.run(
+            JettonMasterStandard.get_wallet_address(
+                client=get_wallet().wallet.client,
+                owner_address=owner_address,
+                jetton_master_address=jetton_master,
+            )
+        )
+    except Exception:
+        logger.exception("Error getting jetton wallet address")
+        raise ValueError("Error getting jetton wallet address")
+    return user_jetton_wallet_address
+
+
 def build_tonconnect_message(
     payment_id: str,
     user_wallet_address: Address,
@@ -28,16 +43,12 @@ def build_tonconnect_message(
     )
     if transfer_type == "usdt":
         try:
-            user_jetton_wallet_address = asyncio.run(
-                JettonMasterStandard.get_wallet_address(
-                    client=get_wallet().wallet.client,
-                    owner_address=user_wallet_address.to_str(),
-                    jetton_master_address=settings.usdt_jetton_address,
-                )
+            user_jetton_wallet_address = get_jetton_wallet(
+                owner_address=user_wallet_address,
+                jetton_master=settings.usdt_jetton_address,
             )
-        except Exception as e:
-            logger.exception("Error getting jetton wallet address")
-            return {"error": str(e)}
+        except ValueError:
+            return {"error": "error_getting_jetton_wallet"}
         jetton_transfer_message = b64encode(
             JettonWalletStandard.build_transfer_body(
                 recipient_address=recipient_address,
@@ -73,4 +84,4 @@ def build_tonconnect_message(
                 }
             ],
         }
-    return {}
+    return {"error": "invalid transfer type"}
