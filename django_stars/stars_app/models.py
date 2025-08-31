@@ -292,3 +292,52 @@ class Payment(models.Model):
 
     def __str__(self):
         return f"#{self.id}"
+
+
+class TonTransaction(models.Model):
+    class Currency(models.TextChoices):
+        TON = "TON"
+        USTD = "USDT"
+
+    id = models.AutoField(primary_key=True, unique=True, verbose_name="ID")
+    source = models.CharField(max_length=48, verbose_name="Источник", null=False)
+    hash = models.CharField(
+        max_length=255,
+        verbose_name="Хэш транзакции",
+        null=True,
+        blank=True,
+        default=None,
+    )
+    amount = models.BigIntegerField(
+        verbose_name="Количество",
+        null=False,
+        default=0,
+    )
+    currency = models.CharField(
+        max_length=10,
+        choices=Currency.choices,
+        default=Currency.TON,
+        verbose_name="Валюта",
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name="Пользователь",
+        null=True,
+        blank=True,
+    )
+    payment = models.ForeignKey(
+        Payment,
+        on_delete=models.CASCADE,
+        related_name="ton_transaction",
+        verbose_name="Платёж",
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        verbose_name_plural = "Транзакции"
+        verbose_name = "Транзакция"
+
+    def __str__(self):
+        return f"#{self.id} {self.source} - {self.hash}"

@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     ton_api_key: SecretStr
     ton_mnemonic: SecretStr
     usdt_jetton_address: str = "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs"
+    deposit_ton_address: str
 
     tonconnect_url: str
     tonconnect_name: str

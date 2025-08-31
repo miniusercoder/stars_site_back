@@ -27,7 +27,7 @@ def build_tonconnect_message(
     payment_id: str,
     user_wallet_address: Address,
     recipient_address: Address,
-    amount: float,
+    amount: int,
     transfer_type: Literal["ton", "usdt"],
 ) -> dict:
     comment_body = (
@@ -44,7 +44,7 @@ def build_tonconnect_message(
         jetton_transfer_message = b64encode(
             JettonWalletStandard.build_transfer_body(
                 recipient_address=recipient_address,
-                jetton_amount=to_nano(amount, 6),
+                jetton_amount=amount,
                 forward_amount=to_nano(0.000000001),
                 forward_payload=comment_body,
             ).to_boc()
@@ -71,7 +71,7 @@ def build_tonconnect_message(
             "messages": [
                 {
                     "address": recipient_address.to_str(),
-                    "amount": str(to_nano(amount)),
+                    "amount": str(amount),
                     "payload": b64encode(comment_body.to_boc()).decode(),
                 }
             ],

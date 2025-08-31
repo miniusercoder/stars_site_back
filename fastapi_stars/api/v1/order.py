@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, Request
 from loguru import logger
 from pytoniq_core import Address
 from redis import Redis
+from tonutils.utils import to_nano
 
 from django_stars.stars_app.models import (
     GuestSession,
@@ -12,6 +13,7 @@ from django_stars.stars_app.models import (
     Order,
     Payment,
     PaymentSystem,
+    TonTransaction,
 )
 from fastapi_stars.api.deps import current_principal
 from fastapi_stars.schemas.auth import Principal
@@ -48,7 +50,7 @@ def create_order(
         system__name=PaymentSystem.Names.TON_CONNECT
     )
     try:
-        choosed_payment_method = PaymentMethod.objects.get(id=order_in.payment_method)
+        chosen_payment_method = PaymentMethod.objects.get(id=order_in.payment_method)
     except PaymentMethod.DoesNotExist:
         return OrderResponse(success=False, error="invalid_payment_method")
     order_price = 0.0
@@ -77,7 +79,7 @@ def create_order(
             order_payload = {}
             order_type = Order.Type.PREMIUM
         case "ton":
-            if not ton_methods.filter(id=choosed_payment_method.id).exists():
+            if not ton_methods.filter(id=chosen_payment_method.id).exists():
                 return OrderResponse(success=False, error="invalid_payment_method")
             try:
                 fragment.get_ton_recipient(order_in.recipient)
@@ -123,26 +125,32 @@ def create_order(
         payload=order_payload,
     )
     payment_id = str(uuid4())
-    Payment.objects.create(
+    payment = Payment.objects.create(
         id=payment_id,
-        method=choosed_payment_method,
+        method=chosen_payment_method,
         sum=order.price,
         status=Payment.Status.CREATED,
         order=order,
     )
-    if ton_methods.filter(id=choosed_payment_method.id).exists():
+    if ton_methods.filter(id=chosen_payment_method.id).exists():
         if not principal["kind"] == "user":
             return OrderResponse(success=False, error="payment_creation_failed")
-        if "USDT" in choosed_payment_method.name:
+        if "USDT" in chosen_payment_method.name:
             transaction_type = "usdt"
-            price_to_send = order.price
+            price_to_send = to_nano(order.price, 6)
         else:
             transaction_type = "ton"
-            price_to_send = round(TON.usd_to_ton(order.price), 6)
+            price_to_send = to_nano(TON.usd_to_ton(order.price))
+        TonTransaction.objects.create(
+            amount=price_to_send,
+            currency=transaction_type.upper(),
+            user=principal["user"],
+            payment=payment,
+        )
         ton_transaction = build_tonconnect_message(
             payment_id,
             user_wallet_address=Address(principal["user"].wallet_address),
-            recipient_address=wallet.wallet.address,
+            recipient_address=settings.deposit_ton_address,
             amount=price_to_send,
             transfer_type=transaction_type,  # type: ignore
         )
