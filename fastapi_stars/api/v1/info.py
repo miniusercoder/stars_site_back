@@ -314,7 +314,7 @@ def get_gifts(_: Principal = Depends(current_principal)):
 
 @router.get("/available_payment_methods", response_model=PaymentMethodsResponse)
 def available_payment_methods(
-    amount: Annotated[float, Query(ge=0, description="Сумма в USD")],
+    order_price: Annotated[float, Query(ge=0, description="Сумма в USD")],
     order_type: Annotated[Item, Query(description="Тип заказа", alias="type")] = "star",
     principal: Principal = Depends(current_principal),
 ):
@@ -326,13 +326,13 @@ def available_payment_methods(
     methods = PaymentMethod.objects.filter(
         ~Q(system__name=PaymentSystem.Names.TON_CONNECT),
         system__is_active=True,
-        min_amount__lte=amount,
+        min_amount__lte=order_price,
     )
     if principal["kind"] == "user":
         ton_methods = PaymentMethod.objects.filter(
             system__name=PaymentSystem.Names.TON_CONNECT,
             system__is_active=True,
-            min_amount__lte=amount,
+            min_amount__lte=order_price,
         )
         methods = methods | ton_methods
     if order_type == "ton":

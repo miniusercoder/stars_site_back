@@ -21,6 +21,7 @@ class Settings(BaseSettings):
 
     telegram_api_id: int
     telegram_api_hash: SecretStr
+    business_connection_id: str = None
 
     ton_api_key: SecretStr
     ton_mnemonic: SecretStr

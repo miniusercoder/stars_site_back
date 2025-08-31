@@ -57,12 +57,13 @@ def create_order(
     white_price = 0.0
     order_payload = {}
     order_type = None
+    recipient = None
     match order_in.item_type:
         case "star":
             if not (50 <= order_in.amount <= 10000):
                 return OrderResponse(success=False, error="invalid_amount")
             try:
-                fragment.get_stars_recipient(order_in.recipient)
+                recipient = fragment.get_stars_recipient(order_in.recipient).recipient
             except ValueError:
                 return OrderResponse(success=False, error="invalid_recipient")
             order_price, white_price = get_stars_price(order_in.amount)
@@ -72,7 +73,7 @@ def create_order(
             if order_in.amount not in {3, 6, 12}:
                 return OrderResponse(success=False, error="invalid_amount")
             try:
-                fragment.get_premium_recipient(order_in.recipient)
+                recipient = fragment.get_premium_recipient(order_in.recipient).recipient
             except ValueError:
                 return OrderResponse(success=False, error="invalid_recipient")
             order_price, white_price = get_premium_price(order_in.amount)  # type: ignore
@@ -82,7 +83,7 @@ def create_order(
             if not ton_methods.filter(id=chosen_payment_method.id).exists():
                 return OrderResponse(success=False, error="invalid_payment_method")
             try:
-                fragment.get_ton_recipient(order_in.recipient)
+                recipient = fragment.get_ton_recipient(order_in.recipient).recipient
             except ValueError:
                 return OrderResponse(success=False, error="invalid_recipient")
             order_price, white_price = get_ton_price(order_in.amount)  # type: ignore
@@ -121,6 +122,7 @@ def create_order(
         amount=order_in.amount,
         price=order_price,
         white_price=white_price,
+        recipient=recipient,
         recipient_username=order_in.recipient,
         payload=order_payload,
     )
