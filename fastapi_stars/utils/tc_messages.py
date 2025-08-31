@@ -60,12 +60,6 @@ def build_tonconnect_message(
             ],
         }
     elif transfer_type == "ton":
-        comment_body = (
-            begin_cell()
-            .store_uint(TEXT_COMMENT_OPCODE, 32)
-            .store_snake_string(payment_id)
-            .end_cell()
-        )
         return {
             "validUntil": int(time.time()) + 300,
             "messages": [
