@@ -115,7 +115,7 @@ def create_order(order_in: OrderIn, principal: Principal = Depends(current_princ
         id=payment_id,
         method=choosed_payment_method,
         sum=order.price,
-        staus=Payment.Status.CREATED,
+        status=Payment.Status.CREATED,
         order=order,
     )
     if ton_methods.filter(id=choosed_payment_method.id).exists():
