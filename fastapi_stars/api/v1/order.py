@@ -85,7 +85,6 @@ def create_order(order_in: OrderIn, principal: Principal = Depends(current_princ
             order_type = Order.Type.GIFT_REGULAR
         case _:
             assert_never(order_in.item_type)
-    return True
     order = Order.objects.create(
         user=user,
         guest_session=gs,
@@ -119,6 +118,8 @@ def create_order(order_in: OrderIn, principal: Principal = Depends(current_princ
     return OrderResponse(
         success=True,
         result=OrderItem(
-            order_id=random.randint(1, 10000), pay_url="https:///wata.pro"
+            order_id=order.id,
+            pay_url=pay_url,
+            ton_transaction=ton_transaction,
         ),
     )
