@@ -270,7 +270,7 @@ class Payment(models.Model):
         indexes = [
             models.Index(fields=["status"]),
             models.Index(fields=["status", "created_at"]),
-            models.Index(fields=["status", "created_at", "type"]),
+            models.Index(fields=["status", "created_at", "method"]),
         ]
 
     def __str__(self):
