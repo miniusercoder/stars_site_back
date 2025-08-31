@@ -1,5 +1,5 @@
 import re
-from typing import Annotated
+from typing import Annotated, assert_never
 
 from django.db.models import Sum
 from django.utils import timezone
@@ -27,6 +27,7 @@ from fastapi_stars.settings import settings
 from fastapi_stars.utils.prices import get_stars_price, get_premium_price, get_ton_price
 from integrations.Currencies import TON, USDT
 from integrations.fragment import FragmentAPI
+from integrations.gifts import get_gift_sender
 from integrations.telegram_bot import bot
 from integrations.wallet.helpers import get_wallet
 
@@ -96,20 +97,83 @@ def validate_telegram_user(
     if cached:
         return TelegramUserResponse.model_validate_json(cached)
 
-    fragment = FragmentAPI(get_wallet())
-    try:
-        recipient = fragment.get_stars_recipient(user.username)
-    except ValueError:
-        result = TelegramUserResponse(success=False, error="not_found")
-    else:
-        recipient.photo = (
-            re.findall(r'"([^"]+)"', recipient.photo)[0] if recipient.photo else None
-        )
-        result = TelegramUserResponse(
-            success=True,
-            result=TelegramUser.model_validate(recipient, from_attributes=True),
-        )
-    r.set(f"stars_site:tg_user_{user.username}", result.model_dump_json(), ex=300)
+    match user.order_type:
+        case "star":
+            fragment = FragmentAPI(get_wallet())
+            try:
+                recipient = fragment.get_stars_recipient(user.username)
+            except ValueError:
+                result = TelegramUserResponse(success=False, error="not_found")
+            else:
+                recipient.photo = (
+                    re.findall(r'"([^"]+)"', recipient.photo)[0]
+                    if recipient.photo
+                    else None
+                )
+                result = TelegramUserResponse(
+                    success=True,
+                    result=TelegramUser.model_validate(recipient, from_attributes=True),
+                )
+        case "premium":
+            fragment = FragmentAPI(get_wallet())
+            try:
+                recipient = fragment.get_premium_recipient(user.username)
+            except ValueError:
+                result = TelegramUserResponse(success=False, error="not_found")
+            else:
+                recipient.photo = (
+                    re.findall(r'"([^"]+)"', recipient.photo)[0]
+                    if recipient.photo
+                    else None
+                )
+                result = TelegramUserResponse(
+                    success=True,
+                    result=TelegramUser.model_validate(recipient, from_attributes=True),
+                )
+        case "ton":
+            fragment = FragmentAPI(get_wallet())
+            try:
+                recipient = fragment.get_ton_recipient(user.username)
+            except ValueError:
+                result = TelegramUserResponse(success=False, error="not_found")
+            else:
+                recipient.photo = (
+                    re.findall(r'"([^"]+)"', recipient.photo)[0]
+                    if recipient.photo
+                    else None
+                )
+                result = TelegramUserResponse(
+                    success=True,
+                    result=TelegramUser.model_validate(recipient, from_attributes=True),
+                )
+        case "gift":
+            if not get_gift_sender().validate_recipient(user.username):
+                result = TelegramUserResponse(success=False, error="not_found")
+            else:
+                fragment = FragmentAPI(get_wallet())
+                try:
+                    recipient = fragment.get_stars_recipient(user.username)
+                except ValueError:
+                    result = TelegramUserResponse(success=False, error="not_found")
+                else:
+                    recipient.photo = (
+                        re.findall(r'"([^"]+)"', recipient.photo)[0]
+                        if recipient.photo
+                        else None
+                    )
+                    result = TelegramUserResponse(
+                        success=True,
+                        result=TelegramUser.model_validate(
+                            recipient, from_attributes=True
+                        ),
+                    )
+        case _:
+            assert_never(user.order_type)
+    r.set(
+        "stars_site:tg_user_{}_{}".format(user.username, user.order_type),
+        result.model_dump_json(),
+        ex=300,
+    )
     return result
 
 

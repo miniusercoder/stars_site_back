@@ -34,6 +34,7 @@ class ProjectStats(BaseModel):
 
 class TelegramUserIn(BaseModel):
     username: str = Field(None, pattern=r"^[a-zA-Z0-9_]{5,32}$")
+    order_type: Item = Field("star", alias="type")
 
 
 class TelegramUser(BaseModel):
