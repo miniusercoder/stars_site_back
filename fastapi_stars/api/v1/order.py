@@ -66,11 +66,13 @@ def create_order(order_in: OrderIn, principal: Principal = Depends(current_princ
             gift_id = order_in.payload.get("gift_id") if order_in.payload else None
             if not gift_id:
                 return OrderResponse(success=False, error="gift_not_found")
-            gifts = bot.get_available_gifts().gifts
-            gifts = filter(lambda x: x.id in settings.available_gifts, gifts)
-            if not any(gift.id == gift_id for gift in gifts):
+            if gift_id not in settings.available_gifts:
                 return OrderResponse(success=False, error="gift_not_found")
-            gift = next(gift for gift in gifts if gift.id == gift_id)
+            gifts = bot.get_available_gifts().gifts
+            gifts = list(filter(lambda x: x.id == gift_id, gifts))
+            if len(gifts) == 0:
+                return OrderResponse(success=False, error="gift_not_found")
+            gift = gifts[0]
             if not get_gift_sender().validate_recipient(order_in.recipient):
                 return OrderResponse(success=False, error="invalid_recipient")
             _, white_price = get_stars_price(500)[1] / 500
