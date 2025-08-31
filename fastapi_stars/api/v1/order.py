@@ -1,6 +1,5 @@
-import random
-from uuid import uuid4
 from typing import assert_never
+from uuid import uuid4
 
 from fastapi import APIRouter, Depends
 from pytoniq_core import Address
@@ -13,6 +12,7 @@ from fastapi_stars.schemas.order import OrderIn, OrderResponse, OrderItem
 from fastapi_stars.settings import settings
 from fastapi_stars.utils.prices import get_stars_price, get_premium_price, get_ton_price
 from fastapi_stars.utils.tc_messages import build_tonconnect_message
+from integrations.Currencies import TON
 from integrations.fragment import FragmentAPI
 from integrations.gifts import get_gift_sender
 from integrations.telegram_bot import bot
@@ -103,12 +103,16 @@ def create_order(order_in: OrderIn, principal: Principal = Depends(current_princ
         payment_method = PaymentMethod.objects.get(id=order_in.payment_method)
         if "USDT" in payment_method.name:
             transaction_type = "usdt"
-            price_usd = order_price
-        transaction_type = "usdt" if "USDT" in payment_method.name else "ton"
+            price_to_send = order.price
+        else:
+            transaction_type = "ton"
+            price_to_send = round(TON.usd_to_ton(order.price), 6)
         ton_transaction = build_tonconnect_message(
             payment_id,
             user_wallet_address=Address(principal["user"].wallet_address),
             recipient_address=wallet.wallet.address,
+            amount=price_to_send,
+            transfer_type=transaction_type,  # type: ignore
         )
         pay_url = None
     else:
