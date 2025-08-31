@@ -18,7 +18,7 @@ class PricesWithCurrency(BaseModel):
 class OrderItem(BaseModel):
     order_id: int
     pay_url: str | None = None
-    ton_transaction: str | None = None
+    ton_transaction: dict | None = None
 
     @classmethod
     def validate(cls, value):
