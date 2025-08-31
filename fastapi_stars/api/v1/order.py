@@ -6,7 +6,13 @@ from loguru import logger
 from pytoniq_core import Address
 from redis import Redis
 
-from django_stars.stars_app.models import GuestSession, PaymentMethod, Order, Payment
+from django_stars.stars_app.models import (
+    GuestSession,
+    PaymentMethod,
+    Order,
+    Payment,
+    PaymentSystem,
+)
 from fastapi_stars.api.deps import current_principal
 from fastapi_stars.schemas.auth import Principal
 from fastapi_stars.schemas.order import OrderIn, OrderResponse, OrderItem
@@ -34,7 +40,9 @@ def create_order(order_in: OrderIn, principal: Principal = Depends(current_princ
         user = principal["user"]
     wallet = get_wallet()
     fragment = FragmentAPI(wallet)
-    ton_methods = PaymentMethod.objects.filter(system__name="TonConnect")
+    ton_methods = PaymentMethod.objects.filter(
+        system__name=PaymentSystem.Names.TON_CONNECT
+    )
     try:
         choosed_payment_method = PaymentMethod.objects.get(id=order_in.payment_method)
     except PaymentMethod.DoesNotExist:

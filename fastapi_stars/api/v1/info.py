@@ -6,7 +6,7 @@ from django.utils import timezone
 from fastapi import APIRouter, Path, HTTPException, Depends, status, Query
 from redis import Redis
 
-from django_stars.stars_app.models import Order, PaymentMethod
+from django_stars.stars_app.models import Order, PaymentMethod, PaymentSystem
 from fastapi_stars.api.deps import current_principal
 from fastapi_stars.schemas.auth import Principal
 from fastapi_stars.schemas.info import (
@@ -324,17 +324,19 @@ def available_payment_methods(
             detail="Access forbidden: only user can use 'ton' order type",
         )
     methods = PaymentMethod.objects.filter(
-        ~Q(system__name="TonConnect"),
+        ~Q(system__name=PaymentSystem.Names.TON_CONNECT),
         system__is_active=True,
         min_amount__lte=amount,
     )
     if principal["kind"] == "user":
         ton_methods = PaymentMethod.objects.filter(
-            system__name="TonConnect", system__is_active=True, min_amount__lte=amount
+            system__name=PaymentSystem.Names.TON_CONNECT,
+            system__is_active=True,
+            min_amount__lte=amount,
         )
         methods = methods | ton_methods
     if order_type == "ton":
-        methods = methods.filter(system__name="TonConnect")
+        methods = methods.filter(system__name=PaymentSystem.Names.TON_CONNECT)
     return PaymentMethodsResponse(
         methods=[
             PaymentMethodModel(

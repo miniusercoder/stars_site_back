@@ -185,7 +185,13 @@ class Order(models.Model):
 
 
 class PaymentSystem(models.Model):
-    name = models.CharField(max_length=100, unique=True)
+    class Names(models.TextChoices):
+        CRYPTOPAY = "cryptopay", "CryptoPay"
+        CARDLINK = "cardlink", "CardLink"
+        TON_CONNECT = "ton_connect", "TonConnect"
+
+    name = models.CharField(max_length=100, unique=True, choices=Names.choices)
+    shop_id = models.CharField(max_length=255, blank=True, null=True)
     is_active = models.BooleanField(default=True)
     access_key = models.CharField(max_length=255, blank=True, null=True)
     secret_key = models.CharField(max_length=255, blank=True, null=True)

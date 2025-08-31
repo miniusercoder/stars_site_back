@@ -24,7 +24,7 @@ class CardLink:
         self.__shop_key = shop_key
 
     def create_bill(
-        self, order_id: str, amount: float, user_id: int, method: str = None
+        self, order_id: str, amount: float, method: str = None
     ) -> BillSchema:
         url = f"{self.__base_url}/bill/create"
         headers = {
@@ -39,7 +39,6 @@ class CardLink:
             "type": "normal",
             "currency_in": "RUB",
             "payer_pays_commission": "1",
-            "payer_email": f"{user_id}@example.com",
         }
         data.update({"payment_method": method} if method else {})
         response = requests.post(url, data, headers=headers)

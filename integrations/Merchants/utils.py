@@ -1,12 +1,15 @@
 from django_stars.stars_app.models import Order
 from fastapi_stars.settings import settings
+from integrations.Currencies import USDT
+from integrations.Merchants.Cardlink import CardLink
 from integrations.Merchants.CryptoPay import CryptoPay
 
 
 def generate_pay_link(order: Order):
     payment = order.payment.first()
+    link = None
     match payment.method.system.name:
-        case "CryptoPay":
+        case payment.method.system.Names.CRYPTOPAY:
             cryptopay = CryptoPay(payment.method.system.access_key)
             link = cryptopay.create_bill(
                 payment.id,
@@ -15,7 +18,14 @@ def generate_pay_link(order: Order):
                 f"Pay for HelperStars #{order.id}",
                 settings.pay_success_url,
             )
-            if link.status:
-                return link.url
-            return None
+        case payment.method.system.Names.CARDLINK:
+            cardlink = CardLink(
+                payment.method.system.shop_id, payment.method.system.access_key
+            )
+            amount = USDT.usd_to_rub(order.price)
+            link = cardlink.create_bill(payment.id, amount)
+    if link and link.status:
+        payment.payment_id = link.id
+        payment.save(update_fields=("payment_id",))
+        return link.url
     return None

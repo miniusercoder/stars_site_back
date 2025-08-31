@@ -16,7 +16,7 @@ def cryptopay(
     request: Request, signature: str = Header(alias="crypto-pay-api-signature")
 ):
     try:
-        payment_system = PaymentSystem.objects.get(name="CryptoPay")
+        payment_system = PaymentSystem.objects.get(name=PaymentSystem.Names.CRYPTOPAY)
     except PaymentSystem.DoesNotExist:
         return "fail"
     data = asyncio.run(request.body())
