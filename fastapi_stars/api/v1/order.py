@@ -43,7 +43,7 @@ def create_order(order_in: OrderIn, principal: Principal = Depends(current_princ
                 fragment.get_stars_recipient(order_in.recipient)
             except ValueError:
                 return OrderResponse(success=False, error="invalid_recipient")
-            order_price = get_stars_price(order_in.amount)
+            order_price, white_price = get_stars_price(order_in.amount)
             order_payload = {}
             order_type = Order.Type.STARS
         case "premium":
