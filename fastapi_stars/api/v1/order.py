@@ -6,7 +6,7 @@ from loguru import logger
 from pytoniq_core import Address
 from redis import Redis
 
-from django_stars.stars_app.models import GuestSession, PaymentMethod, Order
+from django_stars.stars_app.models import GuestSession, PaymentMethod, Order, Payment
 from fastapi_stars.api.deps import current_principal
 from fastapi_stars.schemas.auth import Principal
 from fastapi_stars.schemas.order import OrderIn, OrderResponse, OrderItem
@@ -14,6 +14,7 @@ from fastapi_stars.settings import settings
 from fastapi_stars.utils.prices import get_stars_price, get_premium_price, get_ton_price
 from fastapi_stars.utils.tc_messages import build_tonconnect_message
 from integrations.Currencies import TON
+from integrations.Merchants.utils import generate_pay_link
 from integrations.fragment import FragmentAPI
 from integrations.gifts import get_gift_sender
 from integrations.telegram_bot import bot
@@ -110,6 +111,13 @@ def create_order(order_in: OrderIn, principal: Principal = Depends(current_princ
         payload=order_payload,
     )
     payment_id = str(uuid4())
+    Payment.objects.create(
+        id=payment_id,
+        method=choosed_payment_method,
+        sum=order.price,
+        staus=Payment.Status.CREATED,
+        order=order,
+    )
     if ton_methods.filter(id=choosed_payment_method.id).exists():
         if not principal["kind"] == "user":
             return OrderResponse(success=False, error="payment_creation_failed")
@@ -134,7 +142,7 @@ def create_order(order_in: OrderIn, principal: Principal = Depends(current_princ
         pay_url = None
     else:
         ton_transaction = None
-        pay_url = "https://wata.pro"
+        pay_url = generate_pay_link(order)
 
     return OrderResponse(
         success=True,

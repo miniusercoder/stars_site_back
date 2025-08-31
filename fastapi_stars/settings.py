@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     bot_token: SecretStr
     site_url: str = "https://helperstars.tg"
 
+    pay_success_url: str
+
     jwt_secret: SecretStr
     jwt_alg: str = "HS256"
     jwt_access_ttl: int = 3600  # 1 час
