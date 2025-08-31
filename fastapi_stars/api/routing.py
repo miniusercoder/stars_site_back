@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
-from .v1 import auth, users, info, order
 from .merchants import merchants_router
+from .v1 import auth, users, info, order
 
 api_router = APIRouter()
 api_router.include_router(auth.router, prefix="/v1/auth", tags=["auth"])

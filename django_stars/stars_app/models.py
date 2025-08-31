@@ -246,7 +246,12 @@ class Payment(models.Model):
         verbose_name="Платёжная система",
     )
     sum = models.FloatField(verbose_name="Сумма")
-    status = models.IntegerField(verbose_name="Статус", db_index=True)
+    status = models.IntegerField(
+        choices=Status.choices,
+        default=Status.CREATED,
+        verbose_name="Статус платежа",
+        db_index=True,
+    )
     order = models.ForeignKey(
         Order,
         on_delete=models.SET_NULL,

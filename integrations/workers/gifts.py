@@ -3,16 +3,15 @@ import threading
 import time
 from enum import IntEnum
 
+from bot.models import Order
 from django.db.models import F, Q
 from django.utils import timezone
 from loguru import logger
-from telebot import apihelper, types
-
-from bot.models import Order
 from services.fragment import FragmentAPI
 from services.wallet.helpers import get_wallet
 from src.imports import Database, config, app
 from src.workers.notifiers import notify_about_success, notify_about_error
+from telebot import apihelper, types
 
 db = Database()
 SWAP_MINIMUM = 200  # Минимальное количество звезд для обмена
@@ -39,7 +38,7 @@ def check_stars_balance():
                 config.business_connection_id
             )
         except apihelper.ApiTelegramException:
-            logger.exception(f"Error fetching stars balance")
+            logger.exception("Error fetching stars balance")
             time.sleep(10)
             continue
         if stars_balance.amount < SWAP_MINIMUM:
@@ -48,7 +47,7 @@ def check_stars_balance():
                     config.business_connection_id
                 )
             except apihelper.ApiTelegramException:
-                logger.exception(f"Error fetching stars balance")
+                logger.exception("Error fetching stars balance")
                 time.sleep(10)
                 continue
             message = (

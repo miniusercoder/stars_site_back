@@ -46,7 +46,6 @@ class CryptoPay:
                 "fiat": currency,
                 "amount": round(amount + amount * 0.03, 8),
                 "description": description,
-                "swap_to": "USDT",
                 "paid_btn_url": success_url,
                 "payload": payment_id,
             },

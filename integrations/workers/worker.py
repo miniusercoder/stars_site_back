@@ -7,15 +7,11 @@ from datetime import timedelta
 
 import nacl.exceptions
 import tonutils.exceptions
+from bot.models import Order
 from django.db.models import F, Q
 from django.utils import timezone
 from loguru import logger
 from pytoniq_core import Cell, begin_cell, Address, WalletMessage
-from telebot import apihelper
-from tonutils.utils import to_nano
-from tonutils.wallet.op_codes import TEXT_COMMENT_OPCODE
-
-from bot.models import Order
 from services.fragment.FragmentAPI import FragmentAPI
 from services.fragment.toncenter import (
     TonCenter,
@@ -25,6 +21,9 @@ from services.fragment.toncenter import (
 from services.wallet.helpers import get_wallet
 from src.imports import Database, config, app as bot
 from src.workers.notifiers import notify_about_success, notify_about_error
+from telebot import apihelper
+from tonutils.utils import to_nano
+from tonutils.wallet.op_codes import TEXT_COMMENT_OPCODE
 
 db = Database()
 

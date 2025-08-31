@@ -4,7 +4,6 @@ from typing import Annotated, assert_never
 from django.db.models import Sum, Q
 from django.utils import timezone
 from fastapi import APIRouter, Path, HTTPException, Depends, status, Query
-from loguru import logger
 from redis import Redis
 
 from django_stars.stars_app.models import Order, PaymentMethod
@@ -26,7 +25,6 @@ from fastapi_stars.schemas.info import (
 )
 from fastapi_stars.settings import settings
 from fastapi_stars.utils.prices import get_stars_price, get_premium_price, get_ton_price
-from fastapi_stars.utils.tc_messages import get_jetton_wallet
 from integrations.Currencies import TON, USDT
 from integrations.fragment import FragmentAPI
 from integrations.gifts import get_gift_sender

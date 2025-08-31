@@ -1,10 +1,9 @@
-from telebot import apihelper, types
-from telebot.types import LinkPreviewOptions
-
 from I18N import get_translator
 from bot.models import Order
 from src.Merchants.CBRF import CBRF
 from src.imports import app, config
+from telebot import apihelper, types
+from telebot.types import LinkPreviewOptions
 
 
 def notify_about_error(order: Order, error_detail: str = ""):

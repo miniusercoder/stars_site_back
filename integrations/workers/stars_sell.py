@@ -3,13 +3,12 @@ import time
 from threading import main_thread
 
 import tonutils.exceptions
-from loguru import logger
-from telebot import apihelper
-from telebot.types import LinkPreviewOptions
-
 from I18N import get_translator
+from loguru import logger
 from services.wallet.helpers import get_wallet
 from src.imports import app, Database, config
+from telebot import apihelper
+from telebot.types import LinkPreviewOptions
 
 
 def stars_refund_worker():

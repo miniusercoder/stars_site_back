@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+
 from integrations.Merchants.CryptoPay.fastapi import router as cryptopay
 
 merchants_router = APIRouter()
