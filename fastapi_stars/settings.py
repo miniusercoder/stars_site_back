@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     telegram_api_hash: SecretStr
     business_connection_id: str = None
 
+    toncenter_key: SecretStr
     ton_api_key: SecretStr
     ton_mnemonic: SecretStr
     usdt_jetton_address: str = "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs"

@@ -7,34 +7,31 @@ from datetime import timedelta
 
 import nacl.exceptions
 import tonutils.exceptions
-from bot.models import Order
-from django.db.models import F, Q
+from django.db.models import Q
 from django.utils import timezone
 from loguru import logger
 from pytoniq_core import Cell, begin_cell, Address, WalletMessage
-from services.fragment.FragmentAPI import FragmentAPI
-from services.fragment.toncenter import (
+from tonutils.utils import to_nano
+from tonutils.wallet.op_codes import TEXT_COMMENT_OPCODE
+
+from django_stars.stars_app.models import Order, Payment
+from fastapi_stars.settings import settings
+from integrations.fragment import FragmentAPI
+from integrations.fragment.toncenter import (
     TonCenter,
     IncompleteTransactionError,
     NotFoundTransactionError,
 )
-from services.wallet.helpers import get_wallet
-from src.imports import Database, config, app as bot
-from src.workers.notifiers import notify_about_success, notify_about_error
-from telebot import apihelper
-from tonutils.utils import to_nano
-from tonutils.wallet.op_codes import TEXT_COMMENT_OPCODE
-
-db = Database()
+from integrations.wallet.helpers import get_wallet
 
 NO_CONFIRM_SLEEP = 5
 
 
 def check_transaction_worker():
-    toncenter = TonCenter(config.toncenter_key)
+    toncenter = TonCenter(settings.toncenter_key.get_secret_value())
     while threading.main_thread().is_alive():
         try:
-            orders = Database.get_waiting_orders()
+            orders = Order.objects.filter(status=Order.Status.BLOCKCHAIN_WAITING)
         except Exception:
             logger.exception("Error while fetching waiting orders")
             time.sleep(3)
@@ -57,25 +54,25 @@ def check_transaction_worker():
                     order.refresh_from_db()
                     order.status = order.Status.ERROR
                     order.save()
-                    order.user.refresh_from_db()
-                    order.user.balance = F("balance") + order.price
-                    order.user.save(update_fields=("balance",))
-                    try:
-                        notify_about_error(order)
-                    except Exception:
-                        logger.exception("")
+                    # order.user.refresh_from_db()
+                    # order.user.balance = F("balance") + order.price
+                    # order.user.save(update_fields=("balance",))
+                    # try:
+                    #     notify_about_error(order)
+                    # except Exception:
+                    #     logger.exception("")
                 continue
             except ValueError:
-                for admin in config.admins:
-                    try:
-                        bot.send_message(
-                            admin,
-                            f"Error while checking transaction {order.msg_hash}:\n"
-                            f"{order.inner_message_hash}\n"
-                            f"{order.type} {order.amount} to {order.recipient}",
-                        )
-                    except apihelper.ApiTelegramException:
-                        pass
+                # for admin in config.admins:
+                #     try:
+                #         bot.send_message(
+                #             admin,
+                #             f"Error while checking transaction {order.msg_hash}:\n"
+                #             f"{order.inner_message_hash}\n"
+                #             f"{order.type} {order.amount} to {order.recipient}",
+                #         )
+                #     except apihelper.ApiTelegramException:
+                #         pass
                 logger.exception(f"Error while checking transaction {order.msg_hash}")
                 continue
             except Exception:
@@ -95,10 +92,10 @@ def check_transaction_worker():
                 order.status = order.Status.COMPLETED
                 order.save()
                 logger.success(f"Order {order.id} completed with tx {tx_id}")
-                try:
-                    notify_about_success(order)
-                except Exception:
-                    logger.exception("")
+                # try:
+                #     notify_about_success(order)
+                # except Exception:
+                #     logger.exception("")
         time.sleep(2)
 
 
@@ -108,11 +105,12 @@ def send_transaction_worker():
 
     while threading.main_thread().is_alive():
         try:
-            orders = db.get_created_orders(
+            orders = Order.objects.filter(
+                status=Order.Status.CREATED, payment__status=Payment.Status.CONFIRMED
+            ).filter(
                 Q(type=Order.Type.PREMIUM)
                 | Q(type=Order.Type.STARS)
                 | Q(type=Order.Type.TON)
-                # | Q(type=Order.Type.TON_WALLET)
             )
         except Exception:
             logger.exception("Error while fetching created orders")
@@ -177,13 +175,13 @@ def send_transaction_worker():
                 order.refresh_from_db()
                 order.status = order.Status.ERROR
                 order.save()
-                order.user.refresh_from_db()
-                order.user.balance = F("balance") + order.price
-                order.user.save(update_fields=("balance",))
-                try:
-                    notify_about_error(order)
-                except Exception:
-                    logger.exception("")
+                # order.user.refresh_from_db()
+                # order.user.balance = F("balance") + order.price
+                # order.user.save(update_fields=("balance",))
+                # try:
+                #     notify_about_error(order)
+                # except Exception:
+                #     logger.exception("")
                 continue
             if order.type != order.Type.TON_WALLET:
                 buy_message = buy_message.transaction.messages[0]
@@ -214,13 +212,13 @@ def send_transaction_worker():
                     order.refresh_from_db()
                     order.status = order.Status.ERROR
                     order.save()
-                    order.user.refresh_from_db()
-                    order.user.balance = F("balance") + order.price
-                    order.user.save(update_fields=("balance",))
-                    try:
-                        notify_about_error(order)
-                    except Exception:
-                        logger.exception("")
+                    # order.user.refresh_from_db()
+                    # order.user.balance = F("balance") + order.price
+                    # order.user.save(update_fields=("balance",))
+                    # try:
+                    #     notify_about_error(order)
+                    # except Exception:
+                    #     logger.exception("")
                 continue
             external_message_id = b64encode(bytes.fromhex(external_message_id)).decode()
             logger.info(f"Transaction {external_message_id} sent!")
