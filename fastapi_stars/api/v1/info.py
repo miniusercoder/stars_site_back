@@ -93,15 +93,15 @@ def get_project_stats():
 def validate_telegram_user(
     user: TelegramUserIn, _: Principal = Depends(current_principal)
 ):
-    cached = r.get(f"stars_site:tg_user_{user.username}")
+    cached = r.get("stars_site:tg_user_{}_{}".format(user.username, user.order_type))
     if cached:
         return TelegramUserResponse.model_validate_json(cached)
 
+    fragment = FragmentAPI(get_wallet())
     match user.order_type:
         case "star":
-            fragment = FragmentAPI(get_wallet())
             try:
-                recipient = fragment.get_stars_recipient(user.username)
+                recipient = fragment.get_stars_recipient(user.username).model_copy()
             except ValueError:
                 result = TelegramUserResponse(success=False, error="not_found")
             else:
@@ -115,9 +115,8 @@ def validate_telegram_user(
                     result=TelegramUser.model_validate(recipient, from_attributes=True),
                 )
         case "premium":
-            fragment = FragmentAPI(get_wallet())
             try:
-                recipient = fragment.get_premium_recipient(user.username)
+                recipient = fragment.get_premium_recipient(user.username).model_copy()
             except ValueError:
                 result = TelegramUserResponse(success=False, error="not_found")
             else:
@@ -131,9 +130,8 @@ def validate_telegram_user(
                     result=TelegramUser.model_validate(recipient, from_attributes=True),
                 )
         case "ton":
-            fragment = FragmentAPI(get_wallet())
             try:
-                recipient = fragment.get_ton_recipient(user.username)
+                recipient = fragment.get_ton_recipient(user.username).model_copy()
             except ValueError:
                 result = TelegramUserResponse(success=False, error="not_found")
             else:
@@ -150,9 +148,8 @@ def validate_telegram_user(
             if not get_gift_sender().validate_recipient(user.username):
                 result = TelegramUserResponse(success=False, error="not_found")
             else:
-                fragment = FragmentAPI(get_wallet())
                 try:
-                    recipient = fragment.get_stars_recipient(user.username)
+                    recipient = fragment.get_stars_recipient(user.username).model_copy()
                 except ValueError:
                     result = TelegramUserResponse(success=False, error="not_found")
                 else:
