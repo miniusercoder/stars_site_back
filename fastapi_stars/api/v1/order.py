@@ -152,7 +152,7 @@ def create_order(
         ton_transaction = build_tonconnect_message(
             payment_id,
             user_wallet_address=Address(principal["user"].wallet_address),
-            recipient_address=settings.deposit_ton_address,
+            recipient_address=Address(settings.deposit_ton_address),
             amount=price_to_send,
             transfer_type=transaction_type,  # type: ignore
         )

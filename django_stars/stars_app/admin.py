@@ -7,6 +7,7 @@ from django_stars.stars_app.models import (
     PaymentSystem,
     Payment,
     PaymentMethod,
+    TonTransaction,
 )
 
 
@@ -48,9 +49,19 @@ class PaymentAdmin(admin.ModelAdmin):
     list_display = ("id", "order", "sum", "status", "created_at")
     search_fields = ("order__id",)
     list_filter = ("status", "created_at")
+    ordering = ("-created_at",)
 
 
 @admin.register(PaymentMethod)
 class PaymentMethodAdmin(admin.ModelAdmin):
     list_display = ("id", "system", "name", "min_amount")
     search_fields = ("name", "system__name")
+
+
+@admin.register(TonTransaction)
+class TonTransactionAdmin(admin.ModelAdmin):
+    list_display = ("id", "user", "source", "hash", "amount", "currency")
+    search_fields = ("id", "user__wallet_address", "hash")
+    list_filter = ("currency",)
+    autocomplete_fields = ("user",)
+    ordering = ("-id",)
