@@ -190,6 +190,8 @@ class PaymentSystem(models.Model):
         CARDLINK = "cardlink", "CardLink"
         TON_CONNECT = "ton_connect", "TonConnect"
         HELEKET = "heleket", "Heleket"
+        FREEKASSA = "freekassa", "FreeKassa"
+        LOLZTEAM = "lolzteam", "LolzTeam"
 
     name = models.CharField(max_length=100, unique=True, choices=Names.choices)
     shop_id = models.CharField(max_length=255, blank=True, null=True)
@@ -212,6 +214,7 @@ class PaymentMethod(models.Model):
         related_name="methods",
     )
     name = models.CharField(max_length=100)
+    code = models.CharField(max_length=100, blank=True, null=True)
     min_amount = models.FloatField(default=0)
     icon = models.ImageField(
         upload_to="payment_methods/",

@@ -3,10 +3,12 @@ from fastapi_stars.settings import settings
 from integrations.Currencies import USDT
 from integrations.Merchants.Cardlink import CardLink
 from integrations.Merchants.CryptoPay import CryptoPay
+from integrations.Merchants.FreeKassa import FreeKassa
 from integrations.Merchants.Heleket import Heleket
+from integrations.Merchants.Lolzteam import LolzTeam
 
 
-def generate_pay_link(order: Order):
+def generate_pay_link(order: Order, user_ip: str):
     payment = order.payment.first()
     link = None
     match payment.method.system.name:
@@ -32,6 +34,29 @@ def generate_pay_link(order: Order):
             link = heleket.create_bill(
                 payment.id, order.price, settings.pay_success_url
             )
+        case payment.method.system.Names.FREEKASSA:
+            amount = USDT.usd_to_rub(order.price)
+            freekassa = FreeKassa(
+                payment.method.system.shop_id,
+                payment.method.system.secret_key.split(",")[0],
+                payment.method.system.access_key,
+            )
+            if payment.method.code:
+                link = freekassa.create_bill(
+                    payment.id,
+                    amount,
+                    payment.method.code,
+                    user_ip,
+                )
+            else:
+                link = freekassa.create_sci(payment.id, amount)
+        case payment.method.system.Names.LOLZTEAM:
+            lolzteam = LolzTeam(
+                payment.method.system.shop_id,
+                payment.method.system.access_key,
+            )
+            amount = USDT.usd_to_rub(order.price)
+            link = lolzteam.create_bill(payment.id, amount, settings.pay_success_url)
     if link and link.status:
         payment.payment_id = link.id
         payment.save(update_fields=("payment_id",))

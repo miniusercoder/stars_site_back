@@ -5,7 +5,6 @@ import ujson
 from fastapi import APIRouter, Body
 from fastapi.responses import HTMLResponse
 from loguru import logger
-from telebot import apihelper
 
 from django_stars.stars_app.models import PaymentSystem, Payment
 

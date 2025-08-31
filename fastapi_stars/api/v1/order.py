@@ -1,7 +1,7 @@
 from typing import assert_never
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from loguru import logger
 from pytoniq_core import Address
 from redis import Redis
@@ -31,7 +31,11 @@ r = Redis(host="localhost", port=6379, decode_responses=True)
 
 
 @router.post("/create", response_model=OrderResponse)
-def create_order(order_in: OrderIn, principal: Principal = Depends(current_principal)):
+def create_order(
+    request: Request,
+    order_in: OrderIn,
+    principal: Principal = Depends(current_principal),
+):
     if principal["kind"] == "guest":
         gs, _ = GuestSession.objects.get_or_create(id=principal["payload"]["sid"])
         user = None
@@ -150,7 +154,7 @@ def create_order(order_in: OrderIn, principal: Principal = Depends(current_princ
         pay_url = None
     else:
         ton_transaction = None
-        pay_url = generate_pay_link(order)
+        pay_url = generate_pay_link(order, request.client.host)
         if not pay_url:
             logger.error(f"Error creating payment link for order #{order.id}")
             return OrderResponse(success=False, error="payment_creation_failed")
