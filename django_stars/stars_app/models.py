@@ -262,7 +262,9 @@ class Payment(models.Model):
         max_length=500,
         db_index=True,
     )
-    created_at = models.DateTimeField(verbose_name="Дата платежа", db_index=True, auto_now_add=True)
+    created_at = models.DateTimeField(
+        verbose_name="Дата создания платежа", db_index=True, auto_now_add=True
+    )
 
     class Meta:
         verbose_name_plural = "Платежи"

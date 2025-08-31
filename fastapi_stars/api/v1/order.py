@@ -143,6 +143,9 @@ def create_order(order_in: OrderIn, principal: Principal = Depends(current_princ
     else:
         ton_transaction = None
         pay_url = generate_pay_link(order)
+        if not pay_url:
+            logger.error(f"Error creating payment link for order #{order.id}")
+            return OrderResponse(success=False, error="payment_creation_failed")
 
     return OrderResponse(
         success=True,

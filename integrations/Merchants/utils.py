@@ -16,6 +16,6 @@ def generate_pay_link(order: Order):
                 settings.pay_success_url,
             )
             if link.status:
-                return link.pay_url
+                return link.url
             return None
     return None
