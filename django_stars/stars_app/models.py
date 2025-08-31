@@ -238,8 +238,8 @@ class Payment(models.Model):
         null=False,
         blank=False,
     )
-    type = models.ForeignKey(
-        PaymentSystem,
+    method = models.ForeignKey(
+        PaymentMethod,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,

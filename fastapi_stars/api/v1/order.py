@@ -2,6 +2,7 @@ from typing import assert_never
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends
+from loguru import logger
 from pytoniq_core import Address
 from redis import Redis
 
@@ -32,12 +33,11 @@ def create_order(order_in: OrderIn, principal: Principal = Depends(current_princ
         user = principal["user"]
     wallet = get_wallet()
     fragment = FragmentAPI(wallet)
-    ton_methods = PaymentMethod.objects.filter(system__name="TON")
+    ton_methods = PaymentMethod.objects.filter(system__name="TonConnect")
     try:
         choosed_payment_method = PaymentMethod.objects.get(id=order_in.payment_method)
     except PaymentMethod.DoesNotExist:
         return OrderResponse(success=False, error="invalid_payment_method")
-
     order_price = 0.0
     white_price = 0.0
     order_payload = {}
@@ -64,7 +64,7 @@ def create_order(order_in: OrderIn, principal: Principal = Depends(current_princ
             order_payload = {}
             order_type = Order.Type.PREMIUM
         case "ton":
-            if choosed_payment_method not in ton_methods:
+            if not ton_methods.filter(id=choosed_payment_method.id).exists():
                 return OrderResponse(success=False, error="invalid_payment_method")
             try:
                 fragment.get_ton_recipient(order_in.recipient)
@@ -110,7 +110,7 @@ def create_order(order_in: OrderIn, principal: Principal = Depends(current_princ
         payload=order_payload,
     )
     payment_id = str(uuid4())
-    if choosed_payment_method in ton_methods:
+    if ton_methods.filter(id=choosed_payment_method.id).exists():
         if not principal["kind"] == "user":
             return OrderResponse(success=False, error="payment_creation_failed")
         if "USDT" in choosed_payment_method.name:
