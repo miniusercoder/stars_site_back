@@ -10,12 +10,12 @@ class TON:
     @classmethod
     def ton_to_usd(cls, usd: float, rate: float | None = None):
         rate = cls.get_rate()
-        return float(usd * rate)
+        return float(float(usd) * rate)
 
     @classmethod
     def usd_to_ton(cls, ton: float, rate: float | None = None):
         rate = cls.get_rate()
-        return float(ton / rate)
+        return float(float(ton) / rate)
 
     @staticmethod
     def get_rate() -> float:
@@ -51,12 +51,12 @@ class USDT:
     @classmethod
     def rub_to_usd(cls, usd: float):
         rate = cls.get_rate()
-        return float(usd / rate)
+        return float(float(usd) / rate)
 
     @classmethod
     def usd_to_rub(cls, usdt: float):
         rate = cls.get_rate()
-        return float(usdt * rate)
+        return float(float(usdt) * rate)
 
     @staticmethod
     def get_rate() -> float:

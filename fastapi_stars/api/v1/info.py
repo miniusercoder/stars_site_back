@@ -24,7 +24,11 @@ from fastapi_stars.schemas.info import (
     PaymentMethodModel,
 )
 from fastapi_stars.settings import settings
-from fastapi_stars.utils.prices import get_stars_price, get_premium_price, get_ton_price
+from fastapi_stars.utils.prices import (
+    get_stars_price,
+    get_premium_price,
+    get_ton_price,
+)
 from integrations.Currencies import TON, USDT
 from integrations.fragment import FragmentAPI
 from integrations.gifts import get_gift_sender
@@ -269,6 +273,8 @@ def get_order_price(
             price_usd,
             ex=300,
         )
+    else:
+        price_usd = float(price_usd)
     price_rub = USDT.usd_to_rub(price_usd)
     return PricesWithCurrency(
         price_usd=PriceWithCurrency(currency="usd", price=price_usd),
