@@ -5,20 +5,21 @@ from pydantic import BaseModel, Field
 from fastapi_stars.schemas.info import Item
 
 
-class PriceWithCurrency(BaseModel):
-    price: float
-    currency: Literal["rub", "usd"] = "usd"
+class TonMessage(BaseModel):
+    address: str
+    amount: str
+    payload: str | None = None
 
 
-class PricesWithCurrency(BaseModel):
-    price_rub: PriceWithCurrency
-    price_usd: PriceWithCurrency
+class TonConnectMessage(BaseModel):
+    validUntil: int
+    messages: list[TonMessage]
 
 
 class OrderItem(BaseModel):
     order_id: int
     pay_url: str | None = None
-    ton_transaction: dict | None = None
+    ton_transaction: TonConnectMessage | None = None
 
     @classmethod
     def validate(cls, value):
