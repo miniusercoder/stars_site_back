@@ -59,6 +59,10 @@ def create_order(order_in: OrderIn, principal: Principal = Depends(current_princ
         case "ton":
             if order_in.payment_method not in ton_methods:
                 return OrderResponse(success=False, error="invalid_payment_method")
+            try:
+                fragment.get_ton_recipient(order_in.recipient)
+            except ValueError:
+                return OrderResponse(success=False, error="invalid_recipient")
             order_price, white_price = get_ton_price(order_in.amount)  # type: ignore
             order_payload = {}
             order_type = Order.Type.TON
