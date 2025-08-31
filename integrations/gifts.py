@@ -60,12 +60,12 @@ class GiftSender(metaclass=Singleton):
             )
             return False
 
-    def send_gift(self, username: str, message_hash: int, anonymous: bool) -> bool:
+    def send_gift(self, username: str, gift_id: int, anonymous: bool) -> bool:
         if not self.initialized:
             raise RuntimeError("GiftSender not initialized")
         try:
             sent_result = self.lib.SendGift(
-                username.encode("utf-8"), int(message_hash), int(anonymous)
+                username.encode("utf-8"), int(gift_id), int(anonymous)
             )
         except Exception:
             logger.exception(f"Error while sending gift to {username}")

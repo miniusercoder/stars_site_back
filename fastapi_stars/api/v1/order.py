@@ -32,9 +32,12 @@ def create_order(order_in: OrderIn, principal: Principal = Depends(current_princ
         user = principal["user"]
     wallet = get_wallet()
     fragment = FragmentAPI(wallet)
-    ton_methods = list(
-        PaymentMethod.objects.filter(system__name="TON").values_list("id", flat=True)
-    )
+    ton_methods = PaymentMethod.objects.filter(system__name="TON")
+    try:
+        choosed_payment_method = PaymentMethod.objects.get(id=order_in.payment_method)
+    except PaymentMethod.DoesNotExist:
+        return OrderResponse(success=False, error="invalid_payment_method")
+
     order_price = 0.0
     white_price = 0.0
     order_payload = {}
@@ -61,7 +64,7 @@ def create_order(order_in: OrderIn, principal: Principal = Depends(current_princ
             order_payload = {}
             order_type = Order.Type.PREMIUM
         case "ton":
-            if order_in.payment_method not in ton_methods:
+            if choosed_payment_method not in ton_methods:
                 return OrderResponse(success=False, error="invalid_payment_method")
             try:
                 fragment.get_ton_recipient(order_in.recipient)
@@ -107,11 +110,10 @@ def create_order(order_in: OrderIn, principal: Principal = Depends(current_princ
         payload=order_payload,
     )
     payment_id = str(uuid4())
-    if order_in.payment_method in ton_methods:
+    if choosed_payment_method in ton_methods:
         if not principal["kind"] == "user":
             return OrderResponse(success=False, error="payment_creation_failed")
-        payment_method = PaymentMethod.objects.get(id=order_in.payment_method)
-        if "USDT" in payment_method.name:
+        if "USDT" in choosed_payment_method.name:
             transaction_type = "usdt"
             price_to_send = order.price
         else:
@@ -127,7 +129,7 @@ def create_order(order_in: OrderIn, principal: Principal = Depends(current_princ
         pay_url = None
     else:
         ton_transaction = None
-        pay_url = ...
+        pay_url = "https://wata.pro"
 
     return OrderResponse(
         success=True,
