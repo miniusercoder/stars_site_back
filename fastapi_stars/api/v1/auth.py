@@ -54,6 +54,14 @@ def tonconnect_login(
     subject = subject.to_str(is_bounceable=False)
     user, _ = User.objects.get_or_create(wallet_address=subject)
 
+    if not user.referrer and principal["payload"].get("ref"):
+        ref_user = User.objects.filter(
+            wallet_address=principal["payload"]["ref"]
+        ).first()
+        if ref_user and ref_user != user:
+            user.referrer = ref_user
+            user.save(update_fields=("referrer",))
+
     gs = GuestSession.objects.get_or_create(pk=principal["payload"]["sid"])[0]
     # Order.objects.filter(guest_session=gs).update(
     #     user=user, guest_session=None
