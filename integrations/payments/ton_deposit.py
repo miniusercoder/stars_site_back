@@ -66,7 +66,9 @@ def check_ton_deposits():
                             continue
                         sender_address = transfer.get("sender", {}).get("address", "")
                         comment = transfer.get("comment", "")
-                        sender_address = Address(sender_address).to_str()
+                        sender_address = Address(sender_address).to_str(
+                            is_bounceable=False
+                        )
                         if TonTransaction.objects.filter(
                             hash=transaction_hash
                         ).exists():

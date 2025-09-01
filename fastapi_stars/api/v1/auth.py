@@ -51,7 +51,7 @@ def tonconnect_login(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid TonConnect proof"
         )
-    subject = subject.to_str()
+    subject = subject.to_str(is_bounceable=False)
     user, _ = User.objects.get_or_create(wallet_address=subject)
 
     gs = GuestSession.objects.get_or_create(pk=principal["payload"]["sid"])[0]
