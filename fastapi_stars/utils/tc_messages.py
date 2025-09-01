@@ -53,7 +53,7 @@ def build_tonconnect_message(
             "validUntil": int(time.time()) + 300,
             "messages": [
                 {
-                    "address": user_jetton_wallet_address,
+                    "address": user_jetton_wallet_address.to_str(),
                     "amount": str(to_nano(0.05)),
                     "payload": jetton_transfer_message,
                 }

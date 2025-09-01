@@ -143,6 +143,8 @@ class FragmentAPI(metaclass=Singleton):
                 "query": username,
             }
         )
+        if "error" in resp and "already subscribed" in resp["error"]:
+            raise ValueError("already_subscribed")
         if not resp.get("ok"):
             logger.error(resp)
             raise ValueError("No recipient in response")

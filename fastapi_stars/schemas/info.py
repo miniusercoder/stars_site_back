@@ -44,7 +44,7 @@ class TelegramUser(BaseModel):
 
 class TelegramUserResponse(BaseModel):
     success: bool
-    error: Literal["not_found"] | None = None
+    error: Literal["not_found", "already_subscribed"] | None = None
     result: TelegramUser | None = None
 
 

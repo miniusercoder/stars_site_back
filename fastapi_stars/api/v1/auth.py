@@ -1,6 +1,8 @@
+from typing import Annotated
 from uuid import uuid4
 
 from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi.params import Query
 from pytoniq_core import Address, AddressError
 from tonutils.tonconnect.models import TonProof
 from tonutils.tonconnect.utils import generate_proof_payload
@@ -112,7 +114,11 @@ def refresh_tokens(body: RefreshIn):
 
 
 @router.post("/guest", response_model=GuestTokenOut)
-def create_guest():
+def create_guest(ref: Annotated[str, Query(None, max_length=100)]):
+    if ref:
+        ref_user = User.objects.filter(wallet_address=ref).first()
+        if not ref_user:
+            ref = None
     sid = str(uuid4())
     payload_hash = generate_proof_payload()
     token = create_guest_token(
@@ -121,6 +127,7 @@ def create_guest():
         settings.jwt_guest_ttl,
         sid,
         payload_hash,
+        ref,
     )
     return GuestTokenOut(
         guest=token,

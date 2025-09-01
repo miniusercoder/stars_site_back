@@ -121,8 +121,13 @@ def validate_telegram_user(
         case "premium":
             try:
                 recipient = fragment.get_premium_recipient(user.username).model_copy()
-            except ValueError:
-                result = TelegramUserResponse(success=False, error="not_found")
+            except ValueError as e:
+                if len(e.args) > 0 and e.args[0] == "already_subscribed":
+                    result = TelegramUserResponse(
+                        success=False, error="already_subscribed"
+                    )
+                else:
+                    result = TelegramUserResponse(success=False, error="not_found")
             else:
                 recipient.photo = (
                     re.findall(r'"([^"]+)"', recipient.photo)[0]

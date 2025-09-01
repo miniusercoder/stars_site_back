@@ -9,7 +9,12 @@ def now_ts() -> int:
 
 
 def create_guest_token(
-    secret: str, alg: str, ttl_sec: int, sid: str, ton_verify: str
+    secret: str,
+    alg: str,
+    ttl_sec: int,
+    sid: str,
+    ton_verify: str,
+    ref: str | None = None,
 ) -> str:
     iat = now_ts()
     return jwt.encode(
@@ -19,6 +24,7 @@ def create_guest_token(
             "exp": iat + ttl_sec,
             "type": "guest",
             "ton_verify": ton_verify,
+            "ref": ref,
         },
         secret,
         algorithm=alg,
