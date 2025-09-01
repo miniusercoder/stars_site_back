@@ -114,7 +114,7 @@ def refresh_tokens(body: RefreshIn):
 
 
 @router.post("/guest", response_model=GuestTokenOut)
-def create_guest(ref: Annotated[str, Query(None, max_length=100)]):
+def create_guest(ref: Annotated[str, Query(..., max_length=100)] = None):
     if ref:
         ref_user = User.objects.filter(wallet_address=ref).first()
         if not ref_user:
