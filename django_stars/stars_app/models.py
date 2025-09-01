@@ -85,7 +85,7 @@ class Order(models.Model):
         BLOCKCHAIN_WAITING = 4, "Ожидание подтверждения в блокчейне"
 
     id = models.AutoField(primary_key=True, unique=True)
-    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
+    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     guest_session = models.ForeignKey(
         GuestSession, null=True, blank=True, on_delete=models.SET_NULL
     )
@@ -157,16 +157,16 @@ class Order(models.Model):
         verbose_name_plural = "Заказы"
         verbose_name = "Заказ"
 
-        constraints = [
-            # Ровно один из (user, guest_session) должен быть задан
-            models.CheckConstraint(
-                check=(
-                    (Q(user__isnull=False) & Q(guest_session__isnull=True))
-                    | (Q(user__isnull=True) & Q(guest_session__isnull=False))
-                ),
-                name="order_exactly_one_principal",
-            )
-        ]
+        # constraints = [
+        #     # Ровно один из (user, guest_session) должен быть задан
+        #     models.CheckConstraint(
+        #         check=(
+        #             (Q(user__isnull=False) & Q(guest_session__isnull=True))
+        #             | (Q(user__isnull=True) & Q(guest_session__isnull=False))
+        #         ),
+        #         name="order_exactly_one_principal",
+        #     )
+        # ]
 
         indexes = [
             models.Index(fields=["user", "status"]),
