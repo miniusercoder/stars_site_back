@@ -68,7 +68,7 @@ def get_my_payments(
     principal: Principal = Depends(user_principal),
 ):
     user = principal["user"]
-    my_payments = (Payment.objects.filter(user=user))[offset : offset + on_page]
+    my_payments = (Payment.objects.filter(order__user=user))[offset : offset + on_page]
     return PaymentsResponse(
         items=[
             PaymentModel.model_validate(payment, from_attributes=True)
