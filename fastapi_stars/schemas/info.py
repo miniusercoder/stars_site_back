@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import BaseModel, Field, field_serializer
+from pydantic import BaseModel, Field, field_serializer, field_validator
 
 from fastapi_stars.settings import settings
 
@@ -65,8 +65,9 @@ class PaymentMethodModel(BaseModel):
     name: str
     icon: str | None = None
 
-    @field_serializer("icon")
-    def serialize_icon(self, value):
+    @field_validator("icon", mode="before")
+    @classmethod
+    def serialize_icon(cls, value):
         if not value:
             return None
         return f"{settings.site_url}{value.url}"
