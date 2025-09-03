@@ -2,20 +2,30 @@ from django.db import models
 
 
 class User(models.Model):
-    wallet_address = models.CharField(max_length=128, unique=True, db_index=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    wallet_address = models.CharField(
+        max_length=128,
+        unique=True,
+        db_index=True,
+        verbose_name="Адрес кошелька",
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Дата создания",
+    )
     referrer = models.ForeignKey(
         "self",
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
         related_name="referrals",
+        verbose_name="Реферер",
     )
     ref_alias = models.CharField(
         max_length=64,
         null=True,
         blank=True,
         default=None,
+        verbose_name="Алиас реф.ссылки",
     )
 
     class Meta:
@@ -27,12 +37,17 @@ class User(models.Model):
 
 
 class GuestSession(models.Model):
-    id = models.UUIDField(primary_key=True, editable=False)
+    id = models.UUIDField(
+        primary_key=True,
+        editable=False,
+        verbose_name="ID",
+    )
     claimed_by_user = models.ForeignKey(
         User,
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
+        verbose_name="Закреплён за пользователем",
     )
 
     class Meta:
@@ -89,10 +104,20 @@ class Order(models.Model):
         COMPLETED = 3, "Завершён"
         BLOCKCHAIN_WAITING = 4, "Ожидание подтверждения в блокчейне"
 
-    id = models.AutoField(primary_key=True, unique=True)
-    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
+    id = models.AutoField(primary_key=True, unique=True, verbose_name="ID")
+    user = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        verbose_name="Пользователь",
+    )
     guest_session = models.ForeignKey(
-        GuestSession, null=True, blank=True, on_delete=models.SET_NULL
+        GuestSession,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        verbose_name="Гостевая сессия",
     )
     type = models.IntegerField(
         choices=Type.choices,
@@ -198,11 +223,34 @@ class PaymentSystem(models.Model):
         FREEKASSA = "freekassa", "FreeKassa"
         LOLZTEAM = "lolzteam", "LolzTeam"
 
-    name = models.CharField(max_length=100, unique=True, choices=Names.choices)
-    shop_id = models.CharField(max_length=255, blank=True, null=True)
-    is_active = models.BooleanField(default=True)
-    access_key = models.CharField(max_length=255, blank=True, null=True)
-    secret_key = models.CharField(max_length=255, blank=True, null=True)
+    name = models.CharField(
+        max_length=100,
+        unique=True,
+        choices=Names.choices,
+        verbose_name="Название платёжной системы",
+    )
+    shop_id = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="ID магазина",
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="Активна",
+    )
+    access_key = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="Ключ доступа",
+    )
+    secret_key = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="Секретный ключ",
+    )
 
     class Meta:
         verbose_name_plural = "Платёжные системы"
@@ -217,10 +265,13 @@ class PaymentMethod(models.Model):
         PaymentSystem,
         on_delete=models.CASCADE,
         related_name="methods",
+        verbose_name="Платёжная система",
     )
-    name = models.CharField(max_length=100)
-    code = models.CharField(max_length=100, blank=True, null=True)
-    min_amount = models.FloatField(default=0)
+    name = models.CharField(max_length=100, verbose_name="Название метода")
+    code = models.CharField(
+        max_length=100, blank=True, null=True, verbose_name="Код метода"
+    )
+    min_amount = models.FloatField(default=0, verbose_name="Минимальная сумма (USD)")
     icon = models.ImageField(
         upload_to="payment_methods/",
         null=True,
@@ -259,7 +310,7 @@ class Payment(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        verbose_name="Платёжная система",
+        verbose_name="Метод оплаты",
     )
     sum = models.FloatField(verbose_name="Сумма")
     status = models.IntegerField(
@@ -284,12 +335,14 @@ class Payment(models.Model):
         db_index=True,
     )
     created_at = models.DateTimeField(
-        verbose_name="Дата создания платежа", db_index=True, auto_now_add=True
+        verbose_name="Дата создания",
+        db_index=True,
+        auto_now_add=True,
     )
 
     class Meta:
         verbose_name_plural = "Платежи"
-        verbose_name = "Платеж"
+        verbose_name = "Платёж"
         indexes = [
             models.Index(fields=["status"]),
             models.Index(fields=["status", "created_at"]),

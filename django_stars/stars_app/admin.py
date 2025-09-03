@@ -54,7 +54,7 @@ class PaymentAdmin(admin.ModelAdmin):
 
 @admin.register(PaymentMethod)
 class PaymentMethodAdmin(admin.ModelAdmin):
-    list_display = ("id", "system", "name", "min_amount")
+    list_display = ("id", "system", "name", "min_amount", "order")
     search_fields = ("name", "system__name")
 
 
