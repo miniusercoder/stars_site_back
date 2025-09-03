@@ -22,7 +22,7 @@ class OrderModel(BaseModel):
     id: int
     type: Order.Type
     status: Order.Status
-    price_usd: float
+    price: float
     amount: int
     recipient_username: str
 
