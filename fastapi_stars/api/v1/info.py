@@ -29,7 +29,7 @@ from fastapi_stars.utils.prices import (
     get_premium_price,
     get_ton_price,
 )
-from integrations.Currencies import TON, USDT
+from integrations.Currencies import USDT
 from integrations.fragment import FragmentAPI
 from integrations.gifts import get_gift_sender
 from integrations.telegram_bot import bot
@@ -189,14 +189,11 @@ def get_header_prices():
     if cached_prices:
         return HeaderPrices.model_validate_json(cached_prices)
 
-    ton_price_in_usd = TON.ton_to_usd(1)
+    ton_price_in_usd, _ = get_ton_price(1)
     ton_price_in_rub = USDT.usd_to_rub(ton_price_in_usd)
 
-    fragment = FragmentAPI(get_wallet())
-    price_for_500_stars = fragment.get_stars_price(500).usd
-    stars_markup = settings.stars_markup
-    price_for_500_stars = price_for_500_stars + price_for_500_stars * stars_markup / 100
-    price_per_star_usd = price_for_500_stars / 500
+    price_per_star_usd, _ = get_stars_price(500)
+    price_per_star_usd /= 500
     price_per_star_rub = USDT.usd_to_rub(price_per_star_usd)
 
     prices = HeaderPrices(
