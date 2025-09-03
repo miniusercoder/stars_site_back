@@ -1,6 +1,7 @@
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, UUID4
 
-from django_stars.stars_app.models import Order
+from django_stars.stars_app.models import Order, Payment
+from fastapi_stars.schemas.info import PaymentMethodModel
 
 
 class UserOut(BaseModel):
@@ -29,3 +30,14 @@ class OrderModel(BaseModel):
 
 class OrdersResponse(BaseModel):
     items: list[OrderModel]
+
+
+class PaymentModel(BaseModel):
+    id: UUID4
+    method: PaymentMethodModel
+    sum: float
+    status: Payment.Status
+
+
+class PaymentsResponse(BaseModel):
+    items: list[PaymentModel]
