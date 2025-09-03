@@ -228,6 +228,7 @@ class PaymentMethod(models.Model):
         default=None,
         verbose_name="Иконка метода оплаты",
     )
+    order = models.IntegerField(default=0, verbose_name="Порядок (меньше-выше)")
 
     class Meta:
         verbose_name_plural = "Методы оплаты"

@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     app_name: str = "stars_site_backend"
-    allowed_origins: list[str] = Field(default_factory=lambda: ["*"])
+    allowed_origins: list[str] = Field(default=["*"])
     stars_markup: int = 9
     gifts_markup: int = 25
     ton_markup: int = 10
@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     tonconnect_icon_url: str
 
     available_gifts: list[str] = Field(
-        default_factory=lambda: [
+        default=[
             "5170145012310081615",
             "5170233102089322756",
             "5170250947678437525",
