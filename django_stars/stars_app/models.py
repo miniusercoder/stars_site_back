@@ -11,6 +11,12 @@ class User(models.Model):
         on_delete=models.SET_NULL,
         related_name="referrals",
     )
+    ref_alias = models.CharField(
+        max_length=64,
+        null=True,
+        blank=True,
+        default=None,
+    )
 
     class Meta:
         verbose_name_plural = "Пользователи"

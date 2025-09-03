@@ -47,6 +47,7 @@ def generate_pay_link(order: Order, user_ip: str):
                     amount,
                     payment.method.code,
                     user_ip,
+                    order.recipient_username + "@example.com",
                 )
             else:
                 link = freekassa.create_sci(payment.id, amount)

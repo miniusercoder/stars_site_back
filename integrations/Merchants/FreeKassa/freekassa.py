@@ -40,7 +40,7 @@ class FreeKassa:
         self.__shop_api_key = shop_api_Key
 
     def create_bill(
-        self, order_id: str, amount: float, method: str, buyer_ip: str
+        self, order_id: str, amount: float, method: str, buyer_ip: str, email: str
     ) -> BillSchema:
         """
         Создание счета
@@ -58,6 +58,7 @@ class FreeKassa:
             "nonce": str(int(round(time.time() * 1000))),
             "paymentId": order_id,
             "ip": buyer_ip,
+            "email": email,
             "amount": amount,
             "currency": "RUB",
         }

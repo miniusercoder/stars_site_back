@@ -31,7 +31,7 @@ router = APIRouter()
 def tonconnect_login(
     proof: TonConnectProof, principal: Principal = Depends(current_principal)
 ):
-    if not principal["kind"] == "guest":
+    if principal["kind"] != "guest":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Only guest sessions can use TonConnect login",

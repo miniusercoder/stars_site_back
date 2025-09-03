@@ -34,3 +34,11 @@ def current_principal(credentials=Depends(security)) -> Principal:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Unsupported token type"
         )
+
+
+def user_principal(principal=Depends(current_principal)):
+    if principal["kind"] != "user":
+        raise HTTPException(
+            status_code=403, detail="Access forbidden: not a user principal"
+        )
+    return principal
