@@ -447,6 +447,9 @@ class TonTransaction(models.Model):
         max_length=48,
         verbose_name="Источник",
         help_text="Адрес или источник транзакции",
+        null=True,
+        blank=True,
+        default=None,
     )
     hash = models.CharField(
         max_length=255,
