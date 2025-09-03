@@ -1,6 +1,7 @@
 from typing import Annotated
 from uuid import uuid4
 
+from django.db.models import Q
 from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi.params import Query
 from pytoniq_core import Address, AddressError
@@ -122,9 +123,11 @@ def refresh_tokens(body: RefreshIn):
 @router.post("/guest", response_model=GuestTokenOut)
 def create_guest(ref: Annotated[str, Query(..., max_length=100)] = None):
     if ref:
-        ref_user = User.objects.filter(wallet_address=ref).first()
+        ref_user = User.objects.filter(Q(wallet_address=ref) | Q(ref_alias=ref)).first()
         if not ref_user:
             ref = None
+        else:
+            ref = ref_user.wallet_address
     sid = str(uuid4())
     payload_hash = generate_proof_payload()
     token = create_guest_token(
