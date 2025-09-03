@@ -7,10 +7,12 @@ class User(models.Model):
         unique=True,
         db_index=True,
         verbose_name="Адрес кошелька",
+        help_text="Уникальный адрес TON-кошелька пользователя",
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name="Дата создания",
+        help_text="Дата и время регистрации пользователя",
     )
     referrer = models.ForeignKey(
         "self",
@@ -19,13 +21,15 @@ class User(models.Model):
         on_delete=models.SET_NULL,
         related_name="referrals",
         verbose_name="Реферер",
+        help_text="Пользователь, по приглашению которого зарегистрировался данный пользователь",
     )
     ref_alias = models.CharField(
         max_length=64,
         null=True,
         blank=True,
         default=None,
-        verbose_name="Алиас реф.ссылки",
+        verbose_name="Алиас реферера",
+        help_text="Псевдоним реферальной ссылки",
     )
 
     class Meta:
@@ -41,6 +45,7 @@ class GuestSession(models.Model):
         primary_key=True,
         editable=False,
         verbose_name="ID",
+        help_text="Уникальный идентификатор гостевой сессии",
     )
     claimed_by_user = models.ForeignKey(
         User,
@@ -48,6 +53,7 @@ class GuestSession(models.Model):
         blank=True,
         on_delete=models.SET_NULL,
         verbose_name="Закреплён за пользователем",
+        help_text="Пользователь, к которому привязана эта гостевая сессия",
     )
 
     class Meta:
@@ -68,9 +74,17 @@ class Price(models.Model):
         verbose_name="Тип",
         unique=True,
         db_index=True,
+        help_text="Тип подписки или тарифа",
     )
-    price = models.FloatField(verbose_name="Цена")
-    white_price = models.FloatField(verbose_name="Цена на сайте", default=0)
+    price = models.FloatField(
+        verbose_name="Цена",
+        help_text="Публичная цена, отображаемая на сайте",
+    )
+    white_price = models.FloatField(
+        verbose_name="Цена на fragment",
+        default=0,
+        help_text="Цена на fragment",
+    )
 
     class Meta:
         verbose_name_plural = "Цены"
@@ -111,6 +125,7 @@ class Order(models.Model):
         blank=True,
         on_delete=models.CASCADE,
         verbose_name="Пользователь",
+        help_text="Пользователь, оформивший заказ",
     )
     guest_session = models.ForeignKey(
         GuestSession,
@@ -118,46 +133,79 @@ class Order(models.Model):
         blank=True,
         on_delete=models.SET_NULL,
         verbose_name="Гостевая сессия",
+        help_text="Гостевая сессия, если заказ был сделан без аккаунта",
     )
     type = models.IntegerField(
         choices=Type.choices,
         verbose_name="Тип заказа",
+        help_text="Категория заказа (звёзды, премиум, TON и т.д.)",
     )
     status = models.IntegerField(
         choices=Status.choices,
         default=Status.CREATING,
         verbose_name="Статус заказа",
+        help_text="Текущий статус выполнения заказа",
     )
-    amount = models.BigIntegerField(default=0, verbose_name="Количество")
-    created_at = models.DateTimeField(verbose_name="Дата создания", auto_now_add=True)
-    price = models.FloatField(default=0, verbose_name="Цена")
-    price_ton = models.FloatField(default=0, verbose_name="Цена в TON")
-    white_price = models.FloatField(default=0, verbose_name="Цена на сайте")
+    amount = models.BigIntegerField(
+        default=0,
+        verbose_name="Количество",
+        help_text="Количество единиц заказа (звёзды, TON и т.д.)",
+    )
+    created_at = models.DateTimeField(
+        verbose_name="Дата создания",
+        auto_now_add=True,
+        help_text="Дата и время оформления заказа",
+    )
+    price = models.FloatField(default=0, verbose_name="Цена", help_text="Цена в USD")
+    price_ton = models.FloatField(
+        default=0, verbose_name="Цена в TON", help_text="Цена в криптовалюте TON"
+    )
+    white_price = models.FloatField(
+        default=0, verbose_name="Цена на сайте", help_text="Цена на fragment"
+    )
     take_in_work = models.DateTimeField(
-        null=True, blank=True, verbose_name="Взято в работу"
+        null=True,
+        blank=True,
+        verbose_name="Взято в работу",
+        help_text="Дата и время, когда заказ был принят в обработку",
     )
-    is_refund = models.BooleanField(default=False, verbose_name="Возврат")
+    is_refund = models.BooleanField(
+        default=False,
+        verbose_name="Возврат",
+        help_text="Отмечает, был ли произведён возврат по заказу",
+    )
     recipient = models.CharField(
         blank=True,
         null=True,
         verbose_name="Получатель",
         max_length=500,
+        help_text="Идентификатор получателя",
     )
     recipient_username = models.CharField(
         blank=True,
         null=True,
         verbose_name="Никнейм получателя",
         max_length=500,
+        help_text="Юзернейм получателя",
     )
-    referrals_reward = models.FloatField(default=0, verbose_name="Доход рефералов")
+    referrals_reward = models.FloatField(
+        default=0,
+        verbose_name="Доход рефералов",
+        help_text="Вознаграждение за реферальную систему по заказу",
+    )
     msg_hash = models.CharField(
         blank=True,
         null=True,
         max_length=255,
         verbose_name="Хэш сообщения",
+        help_text="Хэш сообщения в блокчейне",
     )
     ton_sent = models.FloatField(
-        default=0, verbose_name="Отправлено TON", null=True, blank=True
+        default=0,
+        verbose_name="Отправлено TON",
+        null=True,
+        blank=True,
+        help_text="Количество отправленных монет TON",
     )
     inner_message_hash = models.CharField(
         blank=True,
@@ -165,6 +213,7 @@ class Order(models.Model):
         verbose_name="Hash внутреннего сообщения",
         max_length=255,
         db_index=True,
+        help_text="Хэш внутреннего сообщения TON",
     )
     tx_hash = models.CharField(
         blank=True,
@@ -172,15 +221,19 @@ class Order(models.Model):
         verbose_name="Хэш транзакции",
         max_length=255,
         db_index=True,
+        help_text="Хэш транзакции в блокчейне",
     )
     anonymous_sent = models.BooleanField(
-        default=False, verbose_name="Анонимно отправлено"
+        default=False,
+        verbose_name="Анонимно отправлено",
+        help_text="Отмечает, был ли заказ отправлен анонимно",
     )
     payload = models.JSONField(
         blank=True,
         null=True,
         verbose_name="Дополнительные данные",
         default=dict,
+        help_text="Служебные данные по заказу",
     )
 
     class Meta:
@@ -234,22 +287,26 @@ class PaymentSystem(models.Model):
         blank=True,
         null=True,
         verbose_name="ID магазина",
+        help_text="Идентификатор магазина в платёжной системе",
     )
     is_active = models.BooleanField(
         default=True,
         verbose_name="Активна",
+        help_text="Включена ли данная платёжная система",
     )
     access_key = models.CharField(
         max_length=255,
         blank=True,
         null=True,
         verbose_name="Ключ доступа",
+        help_text="Публичный ключ/токен для API",
     )
     secret_key = models.CharField(
         max_length=255,
         blank=True,
         null=True,
         verbose_name="Секретный ключ",
+        help_text="Секретный API-ключ",
     )
 
     class Meta:
@@ -266,20 +323,38 @@ class PaymentMethod(models.Model):
         on_delete=models.CASCADE,
         related_name="methods",
         verbose_name="Платёжная система",
+        help_text="К какой платёжной системе относится метод",
     )
-    name = models.CharField(max_length=100, verbose_name="Название метода")
+    name = models.CharField(
+        max_length=100,
+        verbose_name="Название метода",
+        help_text="Человекочитаемое название метода оплаты",
+    )
     code = models.CharField(
-        max_length=100, blank=True, null=True, verbose_name="Код метода"
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name="Код метода",
+        help_text="Внутренний код метода в системе платёги",
     )
-    min_amount = models.FloatField(default=0, verbose_name="Минимальная сумма (USD)")
+    min_amount = models.FloatField(
+        default=0,
+        verbose_name="Минимальная сумма (USD)",
+        help_text="Минимально допустимая сумма для оплаты",
+    )
     icon = models.ImageField(
         upload_to="payment_methods/",
         null=True,
         blank=True,
         default=None,
         verbose_name="Иконка метода оплаты",
+        help_text="Иконка, отображаемая для метода в интерфейсе",
     )
-    order = models.IntegerField(default=0, verbose_name="Порядок (больше-выше)")
+    order = models.IntegerField(
+        default=0,
+        verbose_name="Порядок отображения",
+        help_text="Приоритет отображения метода (чем выше число, тем выше в списке)",
+    )
 
     class Meta:
         verbose_name_plural = "Методы оплаты"
@@ -304,6 +379,7 @@ class Payment(models.Model):
         primary_key=True,
         null=False,
         blank=False,
+        help_text="Уникальный идентификатор платежа",
     )
     method = models.ForeignKey(
         PaymentMethod,
@@ -311,13 +387,18 @@ class Payment(models.Model):
         null=True,
         blank=True,
         verbose_name="Метод оплаты",
+        help_text="Метод, с помощью которого был совершен платёж",
     )
-    sum = models.FloatField(verbose_name="Сумма")
+    sum = models.FloatField(
+        verbose_name="Сумма",
+        help_text="Сумма платежа в USD",
+    )
     status = models.IntegerField(
         choices=Status.choices,
         default=Status.CREATED,
         verbose_name="Статус платежа",
         db_index=True,
+        help_text="Текущий статус платежа",
     )
     order = models.ForeignKey(
         Order,
@@ -326,6 +407,7 @@ class Payment(models.Model):
         blank=True,
         verbose_name="Заказ",
         related_name="payment",
+        help_text="Заказ, с которым связан платёж",
     )
     payment_id = models.CharField(
         blank=True,
@@ -333,11 +415,13 @@ class Payment(models.Model):
         verbose_name="ID платежа (служебный)",
         max_length=500,
         db_index=True,
+        help_text="Служебный ID платежа во внешней системе",
     )
     created_at = models.DateTimeField(
         verbose_name="Дата создания",
         db_index=True,
         auto_now_add=True,
+        help_text="Дата и время создания платежа",
     )
 
     class Meta:
@@ -359,24 +443,31 @@ class TonTransaction(models.Model):
         USTD = "USDT"
 
     id = models.AutoField(primary_key=True, unique=True, verbose_name="ID")
-    source = models.CharField(max_length=48, verbose_name="Источник", null=False)
+    source = models.CharField(
+        max_length=48,
+        verbose_name="Источник",
+        help_text="Адрес или источник транзакции",
+    )
     hash = models.CharField(
         max_length=255,
         verbose_name="Хэш транзакции",
         null=True,
         blank=True,
         default=None,
+        help_text="Уникальный идентификатор транзакции в блокчейне",
     )
     amount = models.BigIntegerField(
         verbose_name="Количество",
         null=False,
         default=0,
+        help_text="Сумма перевода в выбранной валюте",
     )
     currency = models.CharField(
         max_length=10,
         choices=Currency.choices,
         default=Currency.TON,
         verbose_name="Валюта",
+        help_text="Валюта транзакции (TON или USDT)",
     )
     user = models.ForeignKey(
         User,
@@ -384,6 +475,7 @@ class TonTransaction(models.Model):
         verbose_name="Пользователь",
         null=True,
         blank=True,
+        help_text="Пользователь, связанный с транзакцией",
     )
     payment = models.ForeignKey(
         Payment,
@@ -392,6 +484,7 @@ class TonTransaction(models.Model):
         verbose_name="Платёж",
         null=True,
         blank=True,
+        help_text="Связанный платёж",
     )
 
     class Meta:
