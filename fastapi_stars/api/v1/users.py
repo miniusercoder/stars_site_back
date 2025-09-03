@@ -1,11 +1,18 @@
 from typing import Annotated, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from django.db.models import Q
+from fastapi import APIRouter, Depends
 from fastapi.params import Query
 
 from django_stars.stars_app.models import Order
-from fastapi_stars.api.deps import current_principal, Principal, user_principal
-from fastapi_stars.schemas.users import UserOut, SuccessResponse, RefAliasIn
+from fastapi_stars.api.deps import Principal, user_principal
+from fastapi_stars.schemas.users import (
+    UserOut,
+    SuccessResponse,
+    RefAliasIn,
+    OrdersResponse,
+    OrderModel,
+)
 
 router = APIRouter()
 
@@ -26,10 +33,27 @@ def set_ref_alias(
     return SuccessResponse()
 
 
-@router.get("/orders")
+@router.get("/orders", response_model=OrdersResponse)
 def get_my_orders(
     search_query: Annotated[Optional[str], Query(...)] = None,
     order_type: Annotated[Optional[Order.Type], Query(...)] = None,
+    offset: Annotated[int, Query(...)] = 0,
+    on_page: Annotated[int, Query(...)] = 10,
     principal: Principal = Depends(user_principal),
 ):
-    pass
+    user = principal["user"]
+    search_query = search_query or ""
+    order_type = Q(type=order_type) if order_type else Q()
+    my_orders = (
+        Order.objects.filter(
+            ~Q(status__in=(Order.Status.CANCEL, Order.Status.CREATING)), user=user
+        )
+        .filter(recipient_username__icontains=search_query)
+        .filter(order_type)
+    )[offset : offset + on_page]
+    return OrdersResponse(
+        items=[
+            OrderModel.model_validate(order, from_attributes=True)
+            for order in my_orders
+        ]
+    )

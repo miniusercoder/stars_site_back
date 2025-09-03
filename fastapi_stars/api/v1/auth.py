@@ -8,7 +8,7 @@ from tonutils.tonconnect.models import TonProof
 from tonutils.tonconnect.utils import generate_proof_payload
 from tonutils.tonconnect.utils.verifiers import verify_ton_proof
 
-from django_stars.stars_app.models import User, GuestSession
+from django_stars.stars_app.models import User, GuestSession, Order
 from fastapi_stars.api.deps import Principal, current_principal
 from fastapi_stars.auth.jwt_utils import (
     create_guest_token,
@@ -63,9 +63,7 @@ def tonconnect_login(
             user.save(update_fields=("referrer",))
 
     gs = GuestSession.objects.get_or_create(pk=principal["payload"]["sid"])[0]
-    # Order.objects.filter(guest_session=gs).update(
-    #     user=user, guest_session=None
-    # )
+    Order.objects.filter(guest_session=gs).update(user=user, guest_session=None)
     gs.claimed_by_user = user
     gs.save(update_fields=("claimed_by_user",))
 
