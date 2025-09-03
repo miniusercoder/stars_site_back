@@ -345,7 +345,7 @@ def available_payment_methods(
         methods = methods | ton_methods
     if order_type == "ton":
         methods = methods.filter(system__name=PaymentSystem.Names.TON_CONNECT)
-    methods.order_by("order", "name")
+    methods.order_by("-order", "name")
     return PaymentMethodsResponse(
         methods=[
             PaymentMethodModel.model_validate(m, from_attributes=True) for m in methods
