@@ -1,6 +1,8 @@
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_serializer
+
+from fastapi_stars.settings import settings
 
 type Item = Literal["star", "premium", "ton", "gift"]
 
@@ -62,6 +64,12 @@ class PaymentMethodModel(BaseModel):
     id: int
     name: str
     icon: str | None = None
+
+    @field_serializer("icon")
+    def serialize_icon(self, value):
+        if not value:
+            return None
+        return f"{settings.site_url}{value.url}"
 
 
 class PaymentMethodsResponse(BaseModel):

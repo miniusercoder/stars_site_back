@@ -347,11 +347,6 @@ def available_payment_methods(
         methods = methods.filter(system__name=PaymentSystem.Names.TON_CONNECT)
     return PaymentMethodsResponse(
         methods=[
-            PaymentMethodModel(
-                id=m.id,
-                name=m.name,
-                icon=f"{settings.site_url}{m.icon.url}" if m.icon else None,
-            )
-            for m in methods
+            PaymentMethodModel.model_validate(m, from_attributes=True) for m in methods
         ]
     )
