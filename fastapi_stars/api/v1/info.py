@@ -45,7 +45,7 @@ def get_project_stats():
     if cached_stats:
         return ProjectStats.model_validate_json(cached_stats)
 
-    today_date = timezone.now().date()
+    today_date = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
     stars_today = (
         Order.objects.filter(
             is_refund=False,
