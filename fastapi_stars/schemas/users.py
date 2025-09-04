@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, Field, UUID4
+from pydantic import BaseModel, ConfigDict, Field, UUID4, field_validator
 
 from django_stars.stars_app.models import Order, Payment
 from fastapi_stars.schemas.info import PaymentMethodModel
@@ -26,6 +26,12 @@ class OrderModel(BaseModel):
     price: float
     amount: int
     recipient_username: str
+    created_at: int
+
+    @field_validator("created_at", mode="before")
+    @classmethod
+    def create_date_validator(cls, value):
+        return int(value.timestamp())
 
 
 class OrdersResponse(BaseModel):
@@ -37,6 +43,11 @@ class PaymentModel(BaseModel):
     method: PaymentMethodModel
     sum: float
     status: Payment.Status
+    created_at: int
+    @field_validator("created_at", mode="before")
+    @classmethod
+    def create_date_validator(cls, value):
+        return int(value.timestamp())
 
 
 class PaymentsResponse(BaseModel):
