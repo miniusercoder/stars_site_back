@@ -144,12 +144,15 @@ def validate_telegram_user(
         return TelegramUserResponse.model_validate_json(cached)
 
     fragment = FragmentAPI(get_wallet())
+    result = None
     match user.order_type:
         case "star":
             try:
                 recipient = fragment.get_stars_recipient(user.username).model_copy()
             except ValueError:
-                result = TelegramUserResponse(success=False, error="not_found")
+                result = TelegramUserResponse(
+                    success=False, error="not_found", result=None
+                )
             else:
                 recipient.photo = (
                     re.findall(r'"([^"]+)"', recipient.photo)[0]
@@ -159,6 +162,7 @@ def validate_telegram_user(
                 result = TelegramUserResponse(
                     success=True,
                     result=TelegramUser.model_validate(recipient, from_attributes=True),
+                    error=None,
                 )
         case "premium":
             try:
@@ -166,10 +170,12 @@ def validate_telegram_user(
             except ValueError as e:
                 if len(e.args) > 0 and e.args[0] == "already_subscribed":
                     result = TelegramUserResponse(
-                        success=False, error="already_subscribed"
+                        success=False, error="already_subscribed", result=None
                     )
                 else:
-                    result = TelegramUserResponse(success=False, error="not_found")
+                    result = TelegramUserResponse(
+                        success=False, error="not_found", result=None
+                    )
             else:
                 recipient.photo = (
                     re.findall(r'"([^"]+)"', recipient.photo)[0]
@@ -179,12 +185,15 @@ def validate_telegram_user(
                 result = TelegramUserResponse(
                     success=True,
                     result=TelegramUser.model_validate(recipient, from_attributes=True),
+                    error=None,
                 )
         case "ton":
             try:
                 recipient = fragment.get_ton_recipient(user.username).model_copy()
             except ValueError:
-                result = TelegramUserResponse(success=False, error="not_found")
+                result = TelegramUserResponse(
+                    success=False, error="not_found", result=None
+                )
             else:
                 recipient.photo = (
                     re.findall(r'"([^"]+)"', recipient.photo)[0]
@@ -194,15 +203,20 @@ def validate_telegram_user(
                 result = TelegramUserResponse(
                     success=True,
                     result=TelegramUser.model_validate(recipient, from_attributes=True),
+                    error=None,
                 )
         case "gift":
             if not get_gift_sender().validate_recipient(user.username):
-                result = TelegramUserResponse(success=False, error="not_found")
+                result = TelegramUserResponse(
+                    success=False, error="not_found", result=None
+                )
             else:
                 try:
                     recipient = fragment.get_stars_recipient(user.username).model_copy()
                 except ValueError:
-                    result = TelegramUserResponse(success=False, error="not_found")
+                    result = TelegramUserResponse(
+                        success=False, error="not_found", result=None
+                    )
                 else:
                     recipient.photo = (
                         re.findall(r'"([^"]+)"', recipient.photo)[0]
@@ -214,9 +228,12 @@ def validate_telegram_user(
                         result=TelegramUser.model_validate(
                             recipient, from_attributes=True
                         ),
+                        error=None,
                     )
         case _:
             assert_never(user.order_type)
+    if not result:
+        result = TelegramUserResponse(success=False, error="not_found", result=None)
     r.set(
         "stars_site:tg_user_{}_{}".format(user.username, user.order_type),
         result.model_dump_json(),

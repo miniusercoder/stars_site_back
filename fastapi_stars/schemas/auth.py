@@ -1,4 +1,4 @@
-from typing import TypedDict, Literal, Optional
+from typing import TypedDict, Literal
 
 from pydantic import BaseModel, Field
 
@@ -71,10 +71,10 @@ class SessionValidation(BaseModel):
     """Ответ проверки валидности текущей сессии/токена."""
 
     success: bool = Field(..., description="Флаг успешной проверки.")
-    token_type: Optional[AuthType] = Field(
+    token_type: AuthType | None = Field(
         None, description="Тип токена: `user` или `guest`."
     )
-    wallet_address: Optional[str] = Field(
+    wallet_address: str | None = Field(
         None,
         description="Технический (not user-friendly) адрес кошелька пользователя. Присутствует только для `user`.",
     )

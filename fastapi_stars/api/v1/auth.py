@@ -304,7 +304,9 @@ def validate_session(principal: Principal = Depends(current_principal)):
     Для пользователя дополнительно возвращается `wallet_address` в техническом формате (not user-friendly).
     """
     if principal["kind"] == "guest":
-        return SessionValidation(success=True, token_type=principal["kind"])
+        return SessionValidation(
+            success=True, token_type=principal["kind"], wallet_address=None
+        )
     elif principal["kind"] == "user":
         return SessionValidation(
             success=True,

@@ -78,7 +78,7 @@ def create_order(
     try:
         chosen_payment_method = PaymentMethod.objects.get(id=order_in.payment_method)
     except PaymentMethod.DoesNotExist:
-        return OrderResponse(success=False, error="invalid_payment_method")
+        return OrderResponse(success=False, error="invalid_payment_method", result=None)
     order_price = 0.0
     white_price = 0.0
     order_payload = {}
@@ -87,47 +87,57 @@ def create_order(
     match order_in.item_type:
         case "star":
             if not (50 <= order_in.amount <= 10000):
-                return OrderResponse(success=False, error="invalid_amount")
+                return OrderResponse(success=False, error="invalid_amount", result=None)
             try:
                 recipient = fragment.get_stars_recipient(order_in.recipient).recipient
             except ValueError:
-                return OrderResponse(success=False, error="invalid_recipient")
+                return OrderResponse(
+                    success=False, error="invalid_recipient", result=None
+                )
             order_price, white_price = get_stars_price(order_in.amount)
             order_payload = {}
             order_type = Order.Type.STARS
         case "premium":
             if order_in.amount not in {3, 6, 12}:
-                return OrderResponse(success=False, error="invalid_amount")
+                return OrderResponse(success=False, error="invalid_amount", result=None)
             try:
                 recipient = fragment.get_premium_recipient(order_in.recipient).recipient
             except ValueError:
-                return OrderResponse(success=False, error="invalid_recipient")
+                return OrderResponse(
+                    success=False, error="invalid_recipient", result=None
+                )
             order_price, white_price = get_premium_price(order_in.amount)  # type: ignore
             order_payload = {}
             order_type = Order.Type.PREMIUM
         case "ton":
             if not ton_methods.filter(id=chosen_payment_method.id).exists():
-                return OrderResponse(success=False, error="invalid_payment_method")
+                return OrderResponse(
+                    success=False, error="invalid_payment_method", result=None
+                )
             try:
                 recipient = fragment.get_ton_recipient(order_in.recipient).recipient
             except ValueError:
-                return OrderResponse(success=False, error="invalid_recipient")
+                return OrderResponse(
+                    success=False, error="invalid_recipient", result=None
+                )
             order_price, white_price = get_ton_price(order_in.amount)  # type: ignore
             order_payload = {}
             order_type = Order.Type.TON
         case "gift":
             gift_id = order_in.payload.get("gift_id") if order_in.payload else None
             if not gift_id:
-                return OrderResponse(success=False, error="gift_not_found")
+                return OrderResponse(success=False, error="gift_not_found", result=None)
             if gift_id not in settings.available_gifts:
-                return OrderResponse(success=False, error="gift_not_found")
+                return OrderResponse(success=False, error="gift_not_found", result=None)
             gifts = bot.get_available_gifts().gifts
             gifts = list(filter(lambda x: x.id == gift_id, gifts))
             if len(gifts) == 0:
-                return OrderResponse(success=False, error="gift_not_found")
+                return OrderResponse(success=False, error="gift_not_found", result=None)
             gift = gifts[0]
             if not get_gift_sender().validate_recipient(order_in.recipient):
-                return OrderResponse(success=False, error="invalid_recipient")
+                return OrderResponse(
+                    success=False, error="invalid_recipient", result=None
+                )
             white_price = get_stars_price(500)[1] / 500
             white_price = gift.star_count * white_price
             order_price = round(
@@ -139,7 +149,7 @@ def create_order(
         case _:
             assert_never(order_in.item_type)
     if not order_type:
-        return OrderResponse(success=False, error="internal_error")
+        return OrderResponse(success=False, error="internal_error", result=None)
     order = Order.objects.create(
         user=user,
         guest_session=gs,
@@ -162,7 +172,9 @@ def create_order(
     )
     if ton_methods.filter(id=chosen_payment_method.id).exists():
         if not principal["kind"] == "user":
-            return OrderResponse(success=False, error="payment_creation_failed")
+            return OrderResponse(
+                success=False, error="payment_creation_failed", result=None
+            )
         if "USDT" in chosen_payment_method.name:
             transaction_type = "usdt"
             price_to_send = to_nano(order.price, 6)
@@ -186,14 +198,18 @@ def create_order(
             logger.error(
                 f"Error creating TonConnect message: {ton_transaction['error']}"
             )
-            return OrderResponse(success=False, error="payment_creation_failed")
+            return OrderResponse(
+                success=False, error="payment_creation_failed", result=None
+            )
         pay_url = None
     else:
         ton_transaction = None
         pay_url = generate_pay_link(order, request.client.host)
         if not pay_url:
             logger.error(f"Error creating payment link for order #{order.id}")
-            return OrderResponse(success=False, error="payment_creation_failed")
+            return OrderResponse(
+                success=False, error="payment_creation_failed", result=None
+            )
 
     return OrderResponse(
         success=True,
@@ -202,4 +218,5 @@ def create_order(
             pay_url=pay_url,
             ton_transaction=ton_transaction,
         ),
+        error=None,
     )

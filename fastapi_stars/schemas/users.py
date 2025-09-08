@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict, Field, UUID4, field_validator
 
-from django_stars.stars_app.models import Order, Payment, User
+from django_stars.stars_app.models import Order, Payment
 from fastapi_stars.schemas.info import (
     PaymentMethodModel,
     PricesWithCurrency,
