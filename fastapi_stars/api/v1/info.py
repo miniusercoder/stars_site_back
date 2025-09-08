@@ -36,11 +36,30 @@ from integrations.telegram_bot import bot
 from integrations.wallet.helpers import get_wallet
 
 router = APIRouter()
+
 r = Redis(host="localhost", port=6379, decode_responses=True)
 
 
-@router.get("/project_stats", response_model=ProjectStats)
+@router.get(
+    "/project_stats",
+    response_model=ProjectStats,
+    summary="Сводная статистика проекта",
+    description=(
+        "Возвращает агрегаты по завершённым заказам: количество Stars и Premium за **сегодня** "
+        "и за **всё время**. Результат кэшируется в Redis на 10 минут."
+    ),
+    responses={
+        200: {"description": "Статистика успешно получена (может быть из кэша)."}
+    },
+)
 def get_project_stats():
+    """
+    Считает агрегаты по завершённым заказам `Order`:
+    * Stars: `today` и `total`
+    * Premium: `today` и `total`
+
+    Кэш-ключ: `stars_site:project_stats` (TTL 600 сек).
+    """
     cached_stats = r.get("stars_site:project_stats")
     if cached_stats:
         return ProjectStats.model_validate_json(cached_stats)
@@ -93,10 +112,33 @@ def get_project_stats():
     return project_stats
 
 
-@router.post("/validate_user", response_model=TelegramUserResponse)
+@router.post(
+    "/validate_user",
+    response_model=TelegramUserResponse,
+    summary="Проверка Telegram-получателя",
+    description=(
+        "Проверяет существование и состояние получателя в зависимости от типа заказа: "
+        "`star`, `premium`, `ton` или `gift`. Результат кэшируется на 5 минут. "
+        "Требуется авторизация (guest/user)."
+    ),
+    responses={
+        200: {
+            "description": "Проверка выполнена. Возвращает данные получателя или ошибку."
+        }
+    },
+)
 def validate_telegram_user(
     user: TelegramUserIn, _: Principal = Depends(current_principal)
 ):
+    """
+    Для `order_type`:
+    * **star** — ищет получателя Stars.
+    * **premium** — ищет получателя Premium. Может вернуть `already_subscribed`.
+    * **ton** — ищет получателя TON.
+    * **gift** — валидация получателя в gifts-сервисе, затем загрузка данных из Fragment.
+
+    Кэш-ключ: `stars_site:tg_user_{username}_{order_type}` (TTL 300 сек).
+    """
     cached = r.get("stars_site:tg_user_{}_{}".format(user.username, user.order_type))
     if cached:
         return TelegramUserResponse.model_validate_json(cached)
@@ -183,8 +225,24 @@ def validate_telegram_user(
     return result
 
 
-@router.get("/header_prices", response_model=HeaderPrices)
+@router.get(
+    "/header_prices",
+    response_model=HeaderPrices,
+    summary="Базовые цены для хэдера",
+    description=(
+        "Возвращает ориентировочные цены для TON и Stars в валютах USD и RUB. "
+        "Данные кэшируются на 60 секунд."
+    ),
+    responses={200: {"description": "Цены успешно получены (может быть из кэша)."}},
+)
 def get_header_prices():
+    """
+    Источники:
+    * `get_ton_price(1)` — цена 1 TON в USD, пересчёт в RUB.
+    * `get_stars_price(500)` — средняя цена Stars (делим на 500 для цены за 1 Star).
+
+    Кэш-ключ: `stars_site:base_prices` (TTL 60 сек).
+    """
     cached_prices = r.get("stars_site:base_prices")
     if cached_prices:
         return HeaderPrices.model_validate_json(cached_prices)
@@ -223,9 +281,22 @@ def get_header_prices():
     return prices
 
 
-@router.get("/price/{type}/{amount}", response_model=PricesWithCurrency)
+@router.get(
+    "/price/{type}/{amount}",
+    response_model=PricesWithCurrency,
+    summary="Расчёт цены заказа",
+    description=(
+        "Возвращает стоимость для выбранного типа и количества: `star`, `premium` или `ton`. "
+        "Допустимые значения `amount` зависят от типа. Результат кэшируется на 5 минут."
+    ),
+    responses={
+        200: {"description": "Цена успешно рассчитана (может быть из кэша)."},
+        400: {"description": "Некорректный тип `item_type`."},
+        422: {"description": "Нарушены ограничения по `amount` для выбранного типа."},
+    },
+)
 def get_order_price(
-    item_type: Annotated[Item, Path(alias="type")],
+    item_type: Annotated[Item, Path(alias="type", description="Тип предмета заказа")],
     amount: Annotated[
         int,
         Path(
@@ -235,10 +306,19 @@ def get_order_price(
                 "Для 'star' — от 50 до 10000.\n"
                 "Для 'premium' — только одно из {3, 6, 12}."
             ),
+            examples=[50, 500, 3, 6, 12, 1000],
         ),
     ],
     _: Principal = Depends(current_principal),
 ):
+    """
+    Правила валидации:
+    * **star**: `50 ≤ amount ≤ 10000`
+    * **premium**: `amount ∈ {3, 6, 12}`
+    * **ton**: любое `amount > 0`
+
+    Кэш-ключ: `stars_site:price_{item_type}_{amount}` (TTL 300 сек).
+    """
     price_usd = r.get("stars_site:price_{}_{}".format(item_type, amount))
     if not price_usd:
         if item_type == "star":
@@ -284,8 +364,27 @@ def get_order_price(
     )
 
 
-@router.get("/gifts", response_model=GiftsResponse)
+@router.get(
+    "/gifts",
+    response_model=GiftsResponse,
+    summary="Список доступных подарков",
+    description=(
+        "Возвращает доступные подарки с ценой в USD и RUB. Цены рассчитываются по текущей цене Stars. "
+        "Результат кэшируется на 10 минут."
+    ),
+    responses={
+        200: {"description": "Список подарков сформирован (может быть из кэша)."}
+    },
+)
 def get_gifts(_: Principal = Depends(current_principal)):
+    """
+    Источники данных:
+    * Fragment: цена Stars (берём цену за 500 Stars, делим на 500).
+    * Telegram bot: список доступных подарков.
+    * Маркап: `settings.gifts_markup` (%).
+
+    Кэш-ключ: `stars_site:gifts` (TTL 600 сек).
+    """
     cached = r.get("stars_site:gifts")
     if cached:
         return GiftsResponse.model_validate_json(cached)
@@ -320,12 +419,45 @@ def get_gifts(_: Principal = Depends(current_principal)):
     return gifts_response
 
 
-@router.get("/available_payment_methods", response_model=PaymentMethodsResponse)
+@router.get(
+    "/available_payment_methods",
+    response_model=PaymentMethodsResponse,
+    summary="Доступные платёжные методы",
+    description=(
+        "Возвращает отсортированный список платёжных методов, доступных для указанной суммы и типа заказа. "
+        "Для `type=ton` доступ к методам TonConnect возможен только для авторизованных пользователей."
+    ),
+    responses={
+        200: {"description": "Методы успешно получены."},
+        403: {"description": "Доступ запрещён для `type=ton` и гостевой сессии."},
+    },
+)
 def available_payment_methods(
-    order_price: Annotated[float, Query(ge=0, description="Сумма в USD")],
-    order_type: Annotated[Item, Query(description="Тип заказа", alias="type")] = "star",
+    order_price: Annotated[
+        float,
+        Query(
+            ge=0,
+            description="Сумма заказа в USD, неотрицательное число.",
+            examples=[0, 9.99, 100.0],
+        ),
+    ],
+    order_type: Annotated[
+        Item,
+        Query(
+            description="Тип заказа",
+            alias="type",
+            examples=["star", "premium", "ton", "gift"],
+        ),
+    ] = "star",
     principal: Principal = Depends(current_principal),
 ):
+    """
+    Логика отбора:
+    * Базово исключаем TonConnect из выдачи.
+    * Для **user** добавляем TonConnect (если удовлетворяет `min_amount`).
+    * Если `order_type == "ton"`, фильтруем **только** TonConnect.
+    * Итог сортируется по `-order, name`.
+    """
     if order_type == "ton" and principal["kind"] != "user":
         raise HTTPException(
             status_code=403,

@@ -8,6 +8,11 @@ from integrations.wallet.helpers import get_wallet
 
 
 def get_stars_price(amount: int) -> tuple[float, float]:
+    """
+    :param amount: Количество звёзд
+    :return: (price_with_markup, white_price)
+    """
+
     fragment = FragmentAPI(get_wallet())
     white_price = fragment.get_stars_price(amount).usd
     stars_markup = settings.stars_markup
