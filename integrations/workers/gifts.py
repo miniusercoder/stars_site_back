@@ -7,8 +7,6 @@ from loguru import logger
 from django_stars.stars_app.models import Payment, Order
 from integrations.gifts import get_gift_sender
 
-SWAP_MINIMUM = 200  # Минимальное количество звезд для обмена
-
 
 def gifts_worker():
     sender = get_gift_sender()

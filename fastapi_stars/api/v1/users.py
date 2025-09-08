@@ -4,7 +4,7 @@ from django.db.models import Q, Sum
 from fastapi import APIRouter, Depends
 from fastapi.params import Query
 
-from django_stars.stars_app.models import Order, Payment, User
+from django_stars.stars_app.models import Order, Payment, User, Referral
 from fastapi_stars.api.deps import Principal, user_principal
 from fastapi_stars.schemas.info import PriceWithCurrency, PricesWithCurrency
 from fastapi_stars.schemas.users import (
@@ -17,6 +17,9 @@ from fastapi_stars.schemas.users import (
     PaymentModel,
     UserStatistic,
     StatsForOrderType,
+    ReferralsResponse,
+    UserPublic,
+    ReferralItem,
 )
 from integrations.Currencies import USDT
 
@@ -143,3 +146,56 @@ def get_my_payments(
             for payment in my_payments
         ]
     )
+
+
+@router.get("/referrals", response_model=ReferralsResponse)
+def get_my_referrals(
+    search_query: Annotated[
+        Optional[str], Query(..., description="Поиск по wallet или алиасу")
+    ] = None,
+    level: Annotated[
+        Optional[int], Query(..., ge=1, le=3, description="Фильтр по уровню (1..3)")
+    ] = None,
+    offset: Annotated[int, Query(..., ge=0)] = 0,
+    on_page: Annotated[int, Query(..., ge=1, le=100)] = 10,
+    principal: "Principal" = Depends(user_principal),
+):
+    """
+    Возвращает список приглашённых пользователем рефералов (включая уровни 2-3),
+    взятых из промежуточной модели Referral.
+    """
+    user = principal["user"]
+
+    # Базовый queryset: связи, где текущий пользователь — реферер (любой уровень)
+    qs = (
+        Referral.objects.filter(referrer=user)
+        .select_related("referred")  # чтобы не дергать БД лишний раз
+        .order_by("level", "-id")  # сначала по уровню, затем по убыванию id
+    )
+
+    # Фильтр по уровню
+    if level:
+        qs = qs.filter(level=level)
+
+    # Поиск по кошельку/алиасу приглашённого
+    if search_query:
+        sq = search_query.strip()
+        if sq:
+            qs = qs.filter(
+                Q(referred__wallet_address__icontains=sq)
+                | Q(referred__ref_alias__icontains=sq)
+            )
+
+    # Пагинация
+    qs = qs[offset : offset + on_page]
+
+    items = [
+        ReferralItem(
+            user=UserPublic.from_user(ref.referred),
+            level=ref.level,
+            profit=float(ref.profit),
+        )
+        for ref in qs
+    ]
+
+    return ReferralsResponse(items=items)

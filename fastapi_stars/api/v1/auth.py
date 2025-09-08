@@ -1,6 +1,7 @@
-from typing import Annotated
+from typing import Annotated, Optional
 from uuid import uuid4
 
+from django.db import transaction
 from django.db.models import Q
 from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi.params import Query
@@ -9,7 +10,7 @@ from tonutils.tonconnect.models import TonProof
 from tonutils.tonconnect.utils import generate_proof_payload
 from tonutils.tonconnect.utils.verifiers import verify_ton_proof
 
-from django_stars.stars_app.models import User, GuestSession, Order
+from django_stars.stars_app.models import User, GuestSession, Order, Referral
 from fastapi_stars.api.deps import Principal, current_principal
 from fastapi_stars.auth.jwt_utils import (
     create_guest_token,
@@ -28,6 +29,52 @@ from fastapi_stars.settings import settings
 router = APIRouter()
 
 
+def _normalize_wallet(address_str: str) -> Optional[str]:
+    """
+    Нормализует TON-адрес в non-bounceable строку. Возвращает None, если адрес невалиден.
+    """
+    try:
+        return Address(address_str).to_str(is_bounceable=False)
+    except Exception:
+        return None
+
+
+def _assign_ref_chain_for_new_user(
+    new_user: User, ref_wallet_raw: str, max_levels: int = 3
+) -> None:
+    """
+    Создаёт Referral-связи new_user ← referrer (lvl=1) ← referrer2 (lvl=2) ← referrer3 (lvl=3).
+    Вызывается ТОЛЬКО при первичном создании new_user.
+    """
+    ref_wallet = _normalize_wallet(ref_wallet_raw)
+    if not ref_wallet:
+        return
+
+    # Стартовый реферер (уровень 1)
+    current_ref = User.objects.filter(wallet_address=ref_wallet).first()
+    if not current_ref or current_ref == new_user:
+        return  # не существует или самореферал — игнорируем
+
+    visited = {new_user.pk}  # защита от циклов
+    level = 1
+
+    while current_ref and level <= max_levels:
+        if current_ref.pk in visited or current_ref == new_user:
+            break
+        visited.add(current_ref.pk)
+
+        # Создаём связь, если её нет (unique_together защитит от гонок)
+        Referral.objects.get_or_create(
+            referrer=current_ref,
+            referred=new_user,
+            defaults={"level": level, "profit": 0.0},
+        )
+
+        # Переходим к рефереру текущего реферера (т.е. к "дедушке")
+        current_ref = current_ref.referrer
+        level += 1
+
+
 @router.post("/tonconnect", response_model=TokenPair)
 def tonconnect_login(
     proof: TonConnectProof, principal: Principal = Depends(current_principal)
@@ -37,38 +84,47 @@ def tonconnect_login(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Only guest sessions can use TonConnect login",
         )
+
+    # Валидация адреса из доказательства
     try:
-        subject = Address(proof.account.address)
+        subject_addr = Address(proof.account.address)
     except AddressError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid wallet address"
         )
+
+    # Криптопроверка подписи
     if not verify_ton_proof(
         proof.account.public_key,
         TonProof.from_dict(proof.model_dump()),
-        subject,
+        subject_addr,
         principal["payload"]["ton_verify"],
     ):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid TonConnect proof"
         )
-    subject = subject.to_str(is_bounceable=False)
-    user, _ = User.objects.get_or_create(wallet_address=subject)
 
-    if not user.referrer and principal["payload"].get("ref"):
-        ref_user = User.objects.filter(
-            wallet_address=principal["payload"]["ref"]
-        ).first()
-        if ref_user and ref_user != user:
-            user.referrer = ref_user
-            user.save(update_fields=("referrer",))
+    subject = subject_addr.to_str(is_bounceable=False)
 
-    gs = GuestSession.objects.get_or_create(pk=principal["payload"]["sid"])[0]
-    Order.objects.filter(guest_session=gs).update(user=user, guest_session=None)
-    gs.claimed_by_user = user
-    gs.save(update_fields=("claimed_by_user",))
+    with transaction.atomic():
+        user, created = User.objects.get_or_create(wallet_address=subject)
 
-    # выдаём обычные access/refresh
+        # Назначаем рефоводов только если это свежая регистрация
+        if created and principal["payload"].get("ref"):
+            _assign_ref_chain_for_new_user(
+                new_user=user,
+                ref_wallet_raw=principal["payload"]["ref"],
+                max_levels=3,
+            )
+
+        # Привязываем гостевую сессию и заказы
+        gs = GuestSession.objects.filter(pk=principal["payload"]["sid"]).first()
+        if gs:
+            Order.objects.filter(guest_session=gs).update(user=user, guest_session=None)
+            gs.claimed_by_user = user
+            gs.save(update_fields=("claimed_by_user",))
+
+    # Выдаём обычные access/refresh
     return TokenPair(
         access=create_user_token(
             str(user.pk),

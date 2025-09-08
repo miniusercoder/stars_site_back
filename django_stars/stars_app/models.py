@@ -14,13 +14,11 @@ class User(models.Model):
         verbose_name="Дата создания",
         help_text="Дата и время регистрации пользователя",
     )
-    referrer = models.ForeignKey(
+    referrals = models.ManyToManyField(
         "self",
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="referrals",
-        verbose_name="Реферер",
+        through="Referral",
+        symmetrical=False,
+        verbose_name="Рефералы",
         help_text="Пользователь, по приглашению которого зарегистрировался данный пользователь",
     )
     ref_alias = models.CharField(
@@ -32,12 +30,51 @@ class User(models.Model):
         help_text="Псевдоним реферальной ссылки",
     )
 
+    @property
+    def referrer(self):
+        return self.referred_by.all().first()
+
     class Meta:
         verbose_name_plural = "Пользователи"
         verbose_name = "Пользователь"
 
     def __str__(self):
         return self.wallet_address
+
+
+class Referral(models.Model):
+    referrer = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="referrals_made",
+        verbose_name="Реферер",
+        help_text="Пользователь, пригласивший другого пользователя",
+    )
+    referred = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="referred_by",
+        verbose_name="Приглашённый пользователь",
+        help_text="Пользователь, который был приглашён реферером",
+    )
+    profit = models.FloatField(
+        default=0,
+        verbose_name="Доход с реферала",
+        help_text="Сумма дохода, полученного от данного реферала",
+    )
+    level = models.IntegerField(
+        default=1,
+        verbose_name="Уровень реферала",
+        help_text="Уровень в реферальной системе (1 - прямой, 2 - реферал реферала и т.д.)",
+    )
+
+    class Meta:
+        verbose_name_plural = "Рефералы"
+        verbose_name = "Реферал"
+        unique_together = ("referrer", "referred")
+
+    def __str__(self):
+        return f"{self.referrer.wallet_address} -> {self.referred.wallet_address}"
 
 
 class GuestSession(models.Model):

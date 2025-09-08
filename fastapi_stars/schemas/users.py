@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict, Field, UUID4, field_validator
 
-from django_stars.stars_app.models import Order, Payment
+from django_stars.stars_app.models import Order, Payment, User
 from fastapi_stars.schemas.info import (
     PaymentMethodModel,
     PricesWithCurrency,
@@ -69,3 +69,24 @@ class PaymentModel(BaseModel):
 
 class PaymentsResponse(BaseModel):
     items: list[PaymentModel]
+
+
+class UserPublic(BaseModel):
+    wallet_address: str = Field(
+        ..., description="TON-кошелёк приглашённого пользователя"
+    )
+    ref_alias: str | None = Field(None, description="Алиас приглашённого пользователя")
+
+    @classmethod
+    def from_user(cls, user: "User") -> "UserPublic":
+        return cls(wallet_address=user.wallet_address, ref_alias=user.ref_alias)
+
+
+class ReferralItem(BaseModel):
+    user: UserPublic
+    level: int
+    profit: float
+
+
+class ReferralsResponse(BaseModel):
+    items: list[ReferralItem]
