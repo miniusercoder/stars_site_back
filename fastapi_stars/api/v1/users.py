@@ -18,7 +18,6 @@ from fastapi_stars.schemas.users import (
     UserStatistic,
     StatsForOrderType,
     ReferralsResponse,
-    UserPublic,
     ReferralItem,
 )
 from integrations.Currencies import USDT
@@ -185,7 +184,7 @@ def get_my_referrals(
 
     items = [
         ReferralItem(
-            user=UserPublic.from_user(ref.referred),
+            wallet_address=f"{ref.referred.wallet_address[:4]}...{ref.referred.wallet_address[-4:]}",
             level=ref.level,
             profit=float(ref.profit),
         )
