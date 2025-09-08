@@ -31,7 +31,10 @@ router = APIRouter()
 
 def _normalize_wallet(address_str: str) -> Optional[str]:
     """
-    Нормализует TON-адрес в non-bounceable строку. Возвращает None, если адрес невалиден.
+    Нормализует TON-адрес к non-bounceable строке.
+
+    :param address_str: Адрес кошелька в любом поддерживаемом формате.
+    :return: Нормализованная non-bounceable строка адреса или None, если адрес невалиден.
     """
     try:
         return Address(address_str).to_str(is_bounceable=False)
@@ -43,8 +46,19 @@ def _assign_ref_chain_for_new_user(
     new_user: User, ref_wallet_raw: str, max_levels: int = 3
 ) -> None:
     """
-    Создаёт Referral-связи new_user ← referrer (lvl=1) ← referrer2 (lvl=2) ← referrer3 (lvl=3).
-    Вызывается ТОЛЬКО при первичном создании new_user.
+    Создаёт реферальную цепочку для только что созданного пользователя.
+
+    Формирует связи вида:
+      new_user ← referrer (lvl=1) ← referrer2 (lvl=2) ← referrer3 (lvl=3)
+
+    Ограничения и защита:
+    * Цепочка строится максимум до `max_levels` уровней.
+    * Исключаются циклы и самореферал.
+    * Идём по полю `User.referrer` "вверх" по дереву.
+
+    :param new_user: Новый пользователь, для которого строится цепочка.
+    :param ref_wallet_raw: Адрес (или то, что на него похоже) предполагаемого реферера.
+    :param max_levels: Максимальная глубина цепочки (по умолчанию 3).
     """
     ref_wallet = _normalize_wallet(ref_wallet_raw)
     if not ref_wallet:
@@ -75,10 +89,40 @@ def _assign_ref_chain_for_new_user(
         level += 1
 
 
-@router.post("/tonconnect", response_model=TokenPair)
+@router.post(
+    "/tonconnect",
+    response_model=TokenPair,
+    tags=["Auth"],
+    summary="Логин через TonConnect",
+    description=(
+        "Верифицирует доказательство TonConnect (подпись, домен, payload) и авторизует пользователя по TON-адресу. "
+        "Для вызова требуется **гостевой** токен (полученный из `/guest`), включающий `ton_verify` payload. "
+        "При первой авторизации пользователя дополнительно привязывает реферальную цепочку и переносит заказы из гостевой сессии."
+    ),
+    responses={
+        200: {
+            "description": "Успешная авторизация, выданы пара токенов (access/refresh)."
+        },
+        400: {
+            "description": "Некорректный адрес кошелька или доказательство TonConnect."
+        },
+        401: {"description": "Недействительная сессия/тип токена."},
+    },
+)
 def tonconnect_login(
     proof: TonConnectProof, principal: Principal = Depends(current_principal)
 ):
+    """
+    Проверяет корректность TonConnect-доказательства и выдаёт пару JWT токенов пользователя.
+
+    Требования:
+    * Текущая сессия должна быть **гостевой**.
+    * Подпись и payload проверяются с помощью `verify_ton_proof`.
+
+    Побочные эффекты:
+    * При первичной регистрации назначаются реферальные связи.
+    * Заказы из гостевой сессии переносятся на пользователя.
+    """
     if principal["kind"] != "guest":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -143,8 +187,24 @@ def tonconnect_login(
     )
 
 
-@router.post("/refresh", response_model=TokenPair)
+@router.post(
+    "/refresh",
+    response_model=TokenPair,
+    tags=["Auth"],
+    summary="Обновление пары токенов",
+    description=(
+        "Принимает **refresh** токен, проверяет, что его тип корректен и пользователь существует, "
+        "после чего выдаёт новую пару `access`/`refresh`."
+    ),
+    responses={
+        200: {"description": "Токены успешно обновлены."},
+        401: {"description": "Неверный тип токена или пользователь не найден."},
+    },
+)
 def refresh_tokens(body: RefreshIn):
+    """
+    Обновляет JWT-токены по действительному refresh-токену.
+    """
     payload = decode_any(
         body.refresh, settings.jwt_secret.get_secret_value(), settings.jwt_alg
     )
@@ -176,8 +236,36 @@ def refresh_tokens(body: RefreshIn):
     )
 
 
-@router.post("/guest", response_model=GuestTokenOut)
-def create_guest(ref: Annotated[str, Query(..., max_length=100)] = None):
+@router.post(
+    "/guest",
+    response_model=GuestTokenOut,
+    tags=["Auth"],
+    summary="Создание гостевого токена",
+    description=(
+        "Создаёт анонимную гостевую сессию и возвращает JWT для гостя вместе с `ton_verify` payload. "
+        "Этот payload должен быть использован при последующей авторизации через TonConnect в `/tonconnect`."
+    ),
+    responses={
+        200: {"description": "Гостевой токен создан."},
+    },
+)
+def create_guest(
+    ref: Annotated[
+        str,
+        Query(
+            ...,
+            max_length=100,
+            description=(
+                "Код реферала: TON-адрес **или** реф-алиас. "
+                "Если пользователь с таким значением не найден — реферал игнорируется."
+            ),
+            examples=["EQD...myWallet", "cool-invite"],
+        ),
+    ] = None,
+):
+    """
+    Возвращает гостевой JWT и значение `ton_verify`, необходимое для TonConnect-доказательства.
+    """
     if ref:
         ref_user = User.objects.filter(Q(wallet_address=ref) | Q(ref_alias=ref)).first()
         if not ref_user:
@@ -200,8 +288,25 @@ def create_guest(ref: Annotated[str, Query(..., max_length=100)] = None):
     )
 
 
-@router.get("/session", response_model=SessionValidation)
+@router.get(
+    "/session",
+    response_model=SessionValidation,
+    tags=["Auth"],
+    summary="Проверка валидности текущей сессии",
+    description=(
+        "Возвращает тип текущего токена (`guest` или `user`) и, для пользователя, технический формат адреса кошелька."
+    ),
+    responses={
+        200: {"description": "Сессия валидна."},
+        401: {"description": "Недействительная сессия."},
+    },
+)
 def validate_session(principal: Principal = Depends(current_principal)):
+    """
+    Проверяет токен из авторизации запроса и сообщает его тип.
+
+    Для пользователя дополнительно возвращается `wallet_address` в техническом формате (not user-friendly).
+    """
     if principal["kind"] == "guest":
         return SessionValidation(success=True, token_type=principal["kind"])
     elif principal["kind"] == "user":
