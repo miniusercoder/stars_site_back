@@ -92,7 +92,6 @@ def _assign_ref_chain_for_new_user(
 @router.post(
     "/tonconnect",
     response_model=TokenPair,
-    tags=["Auth"],
     summary="Логин через TonConnect",
     description=(
         "Верифицирует доказательство TonConnect (подпись, домен, payload) и авторизует пользователя по TON-адресу. "
@@ -190,7 +189,6 @@ def tonconnect_login(
 @router.post(
     "/refresh",
     response_model=TokenPair,
-    tags=["Auth"],
     summary="Обновление пары токенов",
     description=(
         "Принимает **refresh** токен, проверяет, что его тип корректен и пользователь существует, "
@@ -239,7 +237,6 @@ def refresh_tokens(body: RefreshIn):
 @router.post(
     "/guest",
     response_model=GuestTokenOut,
-    tags=["Auth"],
     summary="Создание гостевого токена",
     description=(
         "Создаёт анонимную гостевую сессию и возвращает JWT для гостя вместе с `ton_verify` payload. "
@@ -291,7 +288,6 @@ def create_guest(
 @router.get(
     "/session",
     response_model=SessionValidation,
-    tags=["Auth"],
     summary="Проверка валидности текущей сессии",
     description=(
         "Возвращает тип текущего токена (`guest` или `user`) и, для пользователя, технический формат адреса кошелька."
