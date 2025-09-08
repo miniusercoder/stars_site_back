@@ -32,12 +32,38 @@ router = APIRouter()
 r = Redis(host="localhost", port=6379, decode_responses=True)
 
 
-@router.post("/create", response_model=OrderResponse)
+@router.post(
+    "/create",
+    response_model=OrderResponse,
+    summary="Создать заказ и платёж",
+    description=(
+        "Создаёт заказ для типов: `star`, `premium`, `ton`, `gift` и инициирует платёж. "
+        "Возвращает либо `pay_url` (для внешних мерчантов), либо объект `ton_transaction` (для TonConnect). "
+        "Гости могут оплачивать все типы, **кроме** `ton` (TonConnect доступен только пользователям)."
+    ),
+    responses={
+        200: {"description": "Заказ успешно создан. Возвращает платёжные данные."},
+        400: {"description": "Неверные входные данные."},
+        422: {"description": "Нарушены ограничения по количеству/полям."},
+    },
+)
 def create_order(
     request: Request,
     order_in: OrderIn,
     principal: Principal = Depends(current_principal),
 ):
+    """
+    Бизнес-правила:
+    * **star** — `50 ≤ amount ≤ 10000`, получатель должен существовать.
+    * **premium** — `amount ∈ {3, 6, 12}`, получатель должен существовать.
+    * **ton** — метод оплаты *обязательно* из группы TonConnect; получатель должен существовать.
+      Для гостей возвращается ошибка `payment_creation_failed`.
+    * **gift** — требуется `payload.gift_id` из `settings.available_gifts` и валидный получатель.
+
+    Результат:
+    * Для методов TonConnect возвращается `ton_transaction` (а `pay_url` = `null`).
+    * Для остальных методов возвращается `pay_url` (а `ton_transaction` = `null`).
+    """
     if principal["kind"] == "guest":
         gs, _ = GuestSession.objects.get_or_create(id=principal["payload"]["sid"])
         user = None
