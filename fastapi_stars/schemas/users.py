@@ -72,14 +72,13 @@ class PaymentsResponse(BaseModel):
 
 
 class UserPublic(BaseModel):
-    wallet_address: str = Field(
-        ..., description="TON-кошелёк приглашённого пользователя"
-    )
-    ref_alias: str | None = Field(None, description="Алиас приглашённого пользователя")
+    wallet_address: str = Field(...)
+    ref_alias: str | None = Field(None)
 
     @classmethod
     def from_user(cls, user: "User") -> "UserPublic":
-        return cls(wallet_address=user.wallet_address, ref_alias=user.ref_alias)
+        wallet_address = f"{user.wallet_address[:5]}...{user.wallet_address[-5:]}"
+        return cls(wallet_address=wallet_address, ref_alias=user.ref_alias)
 
 
 class ReferralItem(BaseModel):

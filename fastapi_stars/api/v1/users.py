@@ -132,8 +132,8 @@ def get_my_orders(
 
 @router.get("/payments", response_model=PaymentsResponse)
 def get_my_payments(
-    offset: Annotated[int, Query(...)] = 0,
-    on_page: Annotated[int, Query(...)] = 10,
+    on_page: Annotated[int, Query(..., ge=1)] = 10,
+    offset: Annotated[int, Query(..., ge=0, le=100)] = 0,
     principal: Principal = Depends(user_principal),
 ):
     user = principal["user"]
@@ -153,17 +153,11 @@ def get_my_referrals(
     search_query: Annotated[
         Optional[str], Query(..., description="Поиск по wallet или алиасу")
     ] = None,
-    level: Annotated[
-        Optional[int], Query(..., ge=1, le=3, description="Фильтр по уровню (1..3)")
-    ] = None,
+    level: Annotated[Optional[int], Query(..., ge=1, le=3)] = None,
     offset: Annotated[int, Query(..., ge=0)] = 0,
     on_page: Annotated[int, Query(..., ge=1, le=100)] = 10,
     principal: "Principal" = Depends(user_principal),
 ):
-    """
-    Возвращает список приглашённых пользователем рефералов (включая уровни 2-3),
-    взятых из промежуточной модели Referral.
-    """
     user = principal["user"]
 
     # Базовый queryset: связи, где текущий пользователь — реферер (любой уровень)
