@@ -47,14 +47,14 @@ class Referral(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name="referrals_made",
-        verbose_name="Реферер",
+        verbose_name="Рефовод",
         help_text="Пользователь, пригласивший другого пользователя",
     )
     referred = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name="referred_by",
-        verbose_name="Приглашённый пользователь",
+        verbose_name="Реферал",
         help_text="Пользователь, который был приглашён реферером",
     )
     profit = models.FloatField(
