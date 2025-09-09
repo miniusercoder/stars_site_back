@@ -32,7 +32,7 @@ class User(models.Model):
 
     @property
     def referrer(self):
-        return self.referred_by.all().first()
+        return self.referred_by.filter(level=1).first().referrer
 
     class Meta:
         verbose_name_plural = "Пользователи"
