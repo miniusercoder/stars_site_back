@@ -220,6 +220,11 @@ def get_my_referrals_count(principal: "Principal" = Depends(user_principal)):
         .annotate(count=Count("id"))
     )
 
+    referrals_profit = Referral.objects.filter(referrer=user).aggregate(
+        profit=Sum("profit")
+    )
+    referrals_profit_sum = referrals_profit["profit"] or 0.0
+
     level_counts = {1: 0, 2: 0, 3: 0}
     for entry in referrals:
         level_counts[entry["level"]] = entry["count"]
@@ -231,4 +236,5 @@ def get_my_referrals_count(principal: "Principal" = Depends(user_principal)):
         level_2=level_counts[2],
         level_3=level_counts[3],
         total=total_count,
+        total_reward=referrals_profit_sum,
     )

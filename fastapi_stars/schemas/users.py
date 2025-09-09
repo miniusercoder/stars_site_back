@@ -89,6 +89,7 @@ class ReferralsCountResponse(BaseModel):
     level_2: int = Field(..., description="Количество рефералов 2 уровня")
     level_3: int = Field(..., description="Количество рефералов 3 уровня")
     total: int = Field(..., description="Общее количество рефералов")
+    total_reward: float = Field(..., description="Общая сумма вознаграждений")
 
     model_config = {
         "json_schema_extra": {
@@ -98,6 +99,7 @@ class ReferralsCountResponse(BaseModel):
                     "level_2": 3,
                     "level_3": 2,
                     "total": 10,
+                    "total_reward": 123.45,
                 }
             ]
         }

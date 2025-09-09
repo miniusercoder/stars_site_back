@@ -21,6 +21,11 @@ class User(models.Model):
         verbose_name="Рефералы",
         help_text="Пользователь, по приглашению которого зарегистрировался данный пользователь",
     )
+    referral_balance = models.FloatField(
+        default=0,
+        verbose_name="Реферальный баланс",
+        help_text="Сумма заработанных средств через реферальную систему",
+    )
     ref_alias = models.CharField(
         max_length=64,
         null=True,
