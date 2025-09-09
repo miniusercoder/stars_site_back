@@ -38,7 +38,7 @@ def _normalize_wallet(address_str: str) -> Optional[str]:
     """
     try:
         return Address(address_str).to_str(is_bounceable=False)
-    except Exception:
+    except AddressError:
         return None
 
 
@@ -253,8 +253,8 @@ def create_guest(
             ...,
             max_length=100,
             description=(
-                "Код реферала: TON-адрес **или** реф-алиас. "
-                "Если пользователь с таким значением не найден — реферал игнорируется."
+                "Код рефовода: TON-адрес **или** реф-алиас. "
+                "Если пользователь с таким значением не найден — рефовод игнорируется."
             ),
             examples=["EQD...myWallet", "cool-invite"],
         ),
@@ -267,10 +267,7 @@ def create_guest(
         ref_addr = _normalize_wallet(ref)
         ref = ref_addr or ref  # если не адрес, оставляем как есть (возможно, это алиас)
         ref_user = User.objects.filter(Q(wallet_address=ref) | Q(ref_alias=ref)).first()
-        if not ref_user:
-            ref = None
-        else:
-            ref = ref_user.wallet_address
+        ref = ref_user.wallet_address if ref_user else None
     sid = str(uuid4())
     payload_hash = generate_proof_payload()
     token = create_guest_token(
