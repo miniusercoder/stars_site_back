@@ -32,7 +32,7 @@ def create_guest_token(
 
 
 def create_user_token(
-    user_id: str, secret: str, alg: str, ttl: int, token_type: str
+    user_id: str, secret: str, alg: str, ttl: int, token_type: str, ep: int
 ) -> str:
     iat = now_ts()
     return jwt.encode(
@@ -41,6 +41,7 @@ def create_user_token(
             "iat": iat,
             "exp": iat + ttl,
             "type": token_type,
+            "ep": ep,
         },
         secret,
         algorithm=alg,

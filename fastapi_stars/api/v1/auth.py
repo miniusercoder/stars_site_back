@@ -2,8 +2,8 @@ from typing import Annotated, Optional
 from uuid import uuid4
 
 from django.db import transaction
-from django.db.models import Q
-from fastapi import APIRouter, HTTPException, status, Depends
+from django.db.models import Q, F
+from fastapi import APIRouter, HTTPException, status, Depends, Response
 from fastapi.params import Query
 from pytoniq_core import Address, AddressError
 from tonutils.tonconnect.models import TonProof
@@ -11,7 +11,7 @@ from tonutils.tonconnect.utils import generate_proof_payload
 from tonutils.tonconnect.utils.verifiers import verify_ton_proof
 
 from django_stars.stars_app.models import User, GuestSession, Order, Referral
-from fastapi_stars.api.deps import Principal, current_principal
+from fastapi_stars.api.deps import Principal, current_principal, user_principal
 from fastapi_stars.auth.jwt_utils import (
     create_guest_token,
     decode_any,
@@ -175,6 +175,7 @@ def tonconnect_login(
             settings.jwt_alg,
             settings.jwt_access_ttl,
             "access",
+            user.jwt_epoch,
         ),
         refresh=create_user_token(
             str(user.pk),
@@ -182,6 +183,7 @@ def tonconnect_login(
             settings.jwt_alg,
             settings.jwt_refresh_ttl,
             "refresh",
+            user.jwt_epoch,
         ),
     )
 
@@ -211,10 +213,14 @@ def refresh_tokens(body: RefreshIn):
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token type"
         )
     user_id = payload.get("sub")
-    if not user_id or not User.objects.filter(pk=user_id).exists():
+    user = User.objects.filter(pk=user_id).first()
+    if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found"
         )
+
+    if payload.get("ep") != user.jwt_epoch:
+        raise HTTPException(status_code=401, detail="Token revoked")
 
     return TokenPair(
         access=create_user_token(
@@ -223,6 +229,7 @@ def refresh_tokens(body: RefreshIn):
             settings.jwt_alg,
             settings.jwt_access_ttl,
             "access",
+            user.jwt_epoch,
         ),
         refresh=create_user_token(
             user_id,
@@ -230,6 +237,7 @@ def refresh_tokens(body: RefreshIn):
             settings.jwt_alg,
             settings.jwt_refresh_ttl,
             "refresh",
+            user.jwt_epoch,
         ),
     )
 
@@ -318,3 +326,14 @@ def validate_session(principal: Principal = Depends(current_principal)):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid session"
         )
+
+
+@router.post(
+    "/revoke_all",
+    status_code=204,
+    summary="Отозвать все ранее выданные токены пользователя",
+    description="Инкрементирует jwt_epoch для текущего пользователя; все старые токены становятся недействительными.",
+)
+def revoke_all(principal=Depends(user_principal)):
+    User.objects.filter(pk=principal["user"].pk).update(jwt_epoch=F("jwt_epoch") + 1)
+    return Response(status_code=204)

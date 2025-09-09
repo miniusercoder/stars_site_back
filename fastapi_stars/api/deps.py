@@ -19,6 +19,13 @@ def current_principal(credentials=Depends(security)) -> Principal:
     if typ == "access":
         uid = payload.get("sub")
         try:
+            user = User.objects.get(pk=uid)
+        except User.DoesNotExist:
+            raise HTTPException(status_code=401, detail="User not found")
+        if payload.get("ep") != user.jwt_epoch:
+            raise HTTPException(status_code=401, detail="Token revoked")
+
+        try:
             return {
                 "kind": "user",
                 "user": User.objects.get(pk=uid),

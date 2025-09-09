@@ -34,6 +34,7 @@ class User(models.Model):
         verbose_name="Алиас реферера",
         help_text="Псевдоним реферальной ссылки",
     )
+    jwt_epoch = models.PositiveIntegerField(default=0)
 
     @property
     def referrer(self):
