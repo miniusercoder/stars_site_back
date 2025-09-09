@@ -8,6 +8,7 @@ from django_stars.stars_app.models import (
     Payment,
     PaymentMethod,
     TonTransaction,
+    Referral,
 )
 
 
@@ -24,6 +25,17 @@ class UserAdmin(admin.ModelAdmin):
         "wallet_address",
     )
     list_filter = ("created_at",)
+
+
+@admin.register(Referral)
+class ReferralAdmin(admin.ModelAdmin):
+    list_display = ("id", "referrer", "referred", "level")
+    search_fields = (
+        "id",
+        "referrer__wallet_address",
+        "referred__wallet_address",
+    )
+    list_filter = ("level",)
 
 
 @admin.register(Order)
