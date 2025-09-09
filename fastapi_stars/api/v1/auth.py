@@ -264,6 +264,8 @@ def create_guest(
     Возвращает гостевой JWT и значение `ton_verify`, необходимое для TonConnect-доказательства.
     """
     if ref:
+        ref_addr = _normalize_wallet(ref)
+        ref = ref_addr or ref  # если не адрес, оставляем как есть (возможно, это алиас)
         ref_user = User.objects.filter(Q(wallet_address=ref) | Q(ref_alias=ref)).first()
         if not ref_user:
             ref = None
