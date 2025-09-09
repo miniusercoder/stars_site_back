@@ -144,44 +144,40 @@ def set_ref_alias(
         401: {"description": "Недействительная сессия/тип токена."},
     },
 )
-# /orders
+@router.get("/orders", response_model=OrdersResponse, summary="Мои заказы ...")
 def get_my_orders(
     search_query: Annotated[
         Optional[str],
         Query(
-            default=None,
             title="Поиск",
-            description="Подстрочный поиск по имени получателя (`recipient_username`).",
+            description="Подстрочный поиск по recipient_username.",
             example="john",
         ),
     ] = None,
     order_type: Annotated[
         Optional[Order.Type],
         Query(
-            default=None,
             title="Тип заказа",
-            description="Фильтр по типу заказа (например, STARS, PREMIUM, TON).",
+            description="Фильтр по типу заказа (STARS, PREMIUM, TON).",
             example="STARS",
         ),
     ] = None,
     offset: Annotated[
         int,
         Query(
-            default=0,
             ge=0,
             title="Смещение",
-            description="Количество элементов, которые нужно пропустить (для пагинации).",
+            description="Сколько элементов пропустить.",
             example=0,
         ),
     ] = 0,
     on_page: Annotated[
         int,
         Query(
-            default=10,
             ge=1,
             le=100,
             title="На странице",
-            description="Максимальное количество элементов в ответе.",
+            description="Максимум элементов в ответе.",
             example=10,
         ),
     ] = 10,
@@ -219,26 +215,25 @@ def get_my_orders(
         401: {"description": "Недействительная сессия/тип токена."},
     },
 )
-# /payments
+@router.get("/payments", response_model=PaymentsResponse, summary="Мои платежи ...")
 def get_my_payments(
     on_page: Annotated[
         int,
         Query(
-            default=10,
             ge=1,
+            le=100,
             title="На странице",
-            description="Максимальное количество элементов в ответе.",
+            description="Максимум элементов в ответе.",
             example=10,
         ),
     ] = 10,
     offset: Annotated[
         int,
         Query(
-            default=0,
             ge=0,
             le=100,
             title="Смещение",
-            description="Количество элементов, которые нужно пропустить (для пагинации).",
+            description="Сколько элементов пропустить.",
             example=0,
         ),
     ] = 0,
@@ -270,30 +265,28 @@ def get_my_payments(
         200: {"description": "Список рефералов с пагинацией"},
         401: {"description": "Недействительная сессия/тип токена."},
     },
-)  # /referrals
+)
+@router.get("/referrals", response_model=ReferralsResponse, summary="Мои рефералы ...")
 def get_my_referrals(
     search_query: Annotated[
         Optional[str],
         Query(
-            ...,
-            description="Поиск по wallet адресу или реф. алиасу приглашённого.",
+            description="Поиск по wallet или алиасу приглашённого.",
             example="EQB1...abcd",  # или "my_invite"
         ),
     ] = None,
     level: Annotated[
         Optional[int],
         Query(
-            ...,
             ge=1,
             le=3,
-            description="Фильтр по уровню реферала (1, 2 или 3).",
+            description="Уровень реферала (1–3).",
             example=1,
         ),
     ] = None,
     offset: Annotated[
         int,
         Query(
-            ...,
             ge=0,
             description="Смещение (для пагинации).",
             example=0,
@@ -302,7 +295,6 @@ def get_my_referrals(
     on_page: Annotated[
         int,
         Query(
-            ...,
             ge=1,
             le=100,
             description="Количество элементов на странице.",
