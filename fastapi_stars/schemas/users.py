@@ -52,6 +52,7 @@ class OrderModel(BaseModel):
 
 class OrdersResponse(BaseModel):
     items: list[OrderModel]
+    total: int
 
 
 class PaymentModel(BaseModel):
@@ -69,6 +70,7 @@ class PaymentModel(BaseModel):
 
 class PaymentsResponse(BaseModel):
     items: list[PaymentModel]
+    total: int
 
 
 class ReferralItem(BaseModel):
@@ -79,3 +81,4 @@ class ReferralItem(BaseModel):
 
 class ReferralsResponse(BaseModel):
     items: list[ReferralItem]
+    total: int

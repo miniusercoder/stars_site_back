@@ -120,12 +120,15 @@ def get_my_orders(
         .filter(recipient_username__icontains=search_query)
         .filter(order_type)
         .order_by("-id")
-    )[offset : offset + on_page]
+    )
+    total_orders = my_orders.count()
+    my_orders = my_orders[offset : offset + on_page]
     return OrdersResponse(
         items=[
             OrderModel.model_validate(order, from_attributes=True)
             for order in my_orders
-        ]
+        ],
+        total=total_orders,
     )
 
 
@@ -136,14 +139,15 @@ def get_my_payments(
     principal: Principal = Depends(user_principal),
 ):
     user = principal["user"]
-    my_payments = (Payment.objects.filter(order__user=user).order_by("-created_at"))[
-        offset : offset + on_page
-    ]
+    my_payments = Payment.objects.filter(order__user=user).order_by("-created_at")
+    total_payments = my_payments.count()
+    my_payments = my_payments[offset : offset + on_page]
     return PaymentsResponse(
         items=[
             PaymentModel.model_validate(payment, from_attributes=True)
             for payment in my_payments
-        ]
+        ],
+        total=total_payments,
     )
 
 
@@ -180,6 +184,7 @@ def get_my_referrals(
             )
 
     # Пагинация
+    total = qs.count()
     qs = qs[offset : offset + on_page]
 
     items = [
@@ -191,4 +196,4 @@ def get_my_referrals(
         for ref in qs
     ]
 
-    return ReferralsResponse(items=items)
+    return ReferralsResponse(items=items, total=total)
