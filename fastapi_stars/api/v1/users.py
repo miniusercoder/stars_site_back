@@ -27,6 +27,7 @@ router = APIRouter()
 
 
 def get_my_orders_stats(user: User, order_type: Order.Type) -> tuple[int, float]:
+    """Внутренняя утилита для агрегации статистики заказов пользователя по типу."""
     orders = Order.objects.filter(
         is_refund=False,
         user=user,
@@ -38,7 +39,20 @@ def get_my_orders_stats(user: User, order_type: Order.Type) -> tuple[int, float]
     return orders_amount or 0, orders_price or 0
 
 
-@router.get("/me", response_model=UserOut)
+@router.get(
+    "/me",
+    response_model=UserOut,
+    summary="Мои данные и сводная статистика",
+    description=(
+        "Возвращает публичные данные текущего пользователя и агрегированную статистику "
+        "по заказам (STARS, PREMIUM, TON), а также общую сумму пополнений (deposit) "
+        "в привязке к курсам USD и RUB."
+    ),
+    responses={
+        200: {"description": "Успешное получение данных пользователя и статистики"},
+        401: {"description": "Недействительная сессия/тип токена."},
+    },
+)
 def me(principal: Principal = Depends(user_principal)):
     stars_stats = get_my_orders_stats(principal["user"], Order.Type.STARS)
     premium_stats = get_my_orders_stats(principal["user"], Order.Type.PREMIUM)
@@ -93,22 +107,84 @@ def me(principal: Principal = Depends(user_principal)):
     )
 
 
-@router.post("/ref_alias", response_model=SuccessResponse)
+@router.post(
+    "/ref_alias",
+    response_model=SuccessResponse,
+    summary="Установить реферальный алиас",
+    description=(
+        "Устанавливает или обновляет реферальный алиас текущего пользователя. "
+        "Алиас должен быть длиной 5–64 символа."
+    ),
+    responses={
+        200: {"description": "Алиас успешно сохранён"},
+        400: {"description": "Невалидный алиас (длина, формат и т.п.)"},
+        401: {"description": "Недействительная сессия/тип токена."},
+    },
+)
 def set_ref_alias(
     ref_alias: RefAliasIn, principal: Principal = Depends(user_principal)
 ):
     user = principal["user"]
     user.ref_alias = ref_alias.ref_alias
     user.save(update_fields=("ref_alias",))
-    return SuccessResponse()
+    return SuccessResponse(success=True)
 
 
-@router.get("/orders", response_model=OrdersResponse)
+@router.get(
+    "/orders",
+    response_model=OrdersResponse,
+    summary="Мои заказы (список с фильтрами и пагинацией)",
+    description=(
+        "Возвращает список заказов текущего пользователя. "
+        "Можно фильтровать по типу заказа и искать по `recipient_username`. "
+        "Статусы `CANCEL` и `CREATING` исключаются."
+    ),
+    responses={
+        200: {"description": "Список заказов с пагинацией"},
+        401: {"description": "Недействительная сессия/тип токена."},
+    },
+)
+# /orders
 def get_my_orders(
-    search_query: Annotated[Optional[str], Query(...)] = None,
-    order_type: Annotated[Optional[Order.Type], Query(...)] = None,
-    offset: Annotated[int, Query(...)] = 0,
-    on_page: Annotated[int, Query(...)] = 10,
+    search_query: Annotated[
+        Optional[str],
+        Query(
+            default=None,
+            title="Поиск",
+            description="Подстрочный поиск по имени получателя (`recipient_username`).",
+            example="john",
+        ),
+    ] = None,
+    order_type: Annotated[
+        Optional[Order.Type],
+        Query(
+            default=None,
+            title="Тип заказа",
+            description="Фильтр по типу заказа (например, STARS, PREMIUM, TON).",
+            example="STARS",
+        ),
+    ] = None,
+    offset: Annotated[
+        int,
+        Query(
+            default=0,
+            ge=0,
+            title="Смещение",
+            description="Количество элементов, которые нужно пропустить (для пагинации).",
+            example=0,
+        ),
+    ] = 0,
+    on_page: Annotated[
+        int,
+        Query(
+            default=10,
+            ge=1,
+            le=100,
+            title="На странице",
+            description="Максимальное количество элементов в ответе.",
+            example=10,
+        ),
+    ] = 10,
     principal: Principal = Depends(user_principal),
 ):
     user = principal["user"]
@@ -133,10 +209,39 @@ def get_my_orders(
     )
 
 
-@router.get("/payments", response_model=PaymentsResponse)
+@router.get(
+    "/payments",
+    response_model=PaymentsResponse,
+    summary="Мои платежи (список с пагинацией)",
+    description="Возвращает список платежей по заказам текущего пользователя.",
+    responses={
+        200: {"description": "Список платежей с пагинацией"},
+        401: {"description": "Недействительная сессия/тип токена."},
+    },
+)
+# /payments
 def get_my_payments(
-    on_page: Annotated[int, Query(..., ge=1)] = 10,
-    offset: Annotated[int, Query(..., ge=0, le=100)] = 0,
+    on_page: Annotated[
+        int,
+        Query(
+            default=10,
+            ge=1,
+            title="На странице",
+            description="Максимальное количество элементов в ответе.",
+            example=10,
+        ),
+    ] = 10,
+    offset: Annotated[
+        int,
+        Query(
+            default=0,
+            ge=0,
+            le=100,
+            title="Смещение",
+            description="Количество элементов, которые нужно пропустить (для пагинации).",
+            example=0,
+        ),
+    ] = 0,
     principal: Principal = Depends(user_principal),
 ):
     user = principal["user"]
@@ -152,30 +257,71 @@ def get_my_payments(
     )
 
 
-@router.get("/referrals", response_model=ReferralsResponse)
+@router.get(
+    "/referrals",
+    response_model=ReferralsResponse,
+    summary="Мои рефералы (список по уровням, поиск и пагинация)",
+    description=(
+        "Возвращает список рефералов текущего пользователя. "
+        "Поддерживает фильтрацию по уровню (1–3), поиск по кошельку/алиасу приглашённого, "
+        "а также пагинацию."
+    ),
+    responses={
+        200: {"description": "Список рефералов с пагинацией"},
+        401: {"description": "Недействительная сессия/тип токена."},
+    },
+)  # /referrals
 def get_my_referrals(
     search_query: Annotated[
-        Optional[str], Query(..., description="Поиск по wallet или алиасу")
+        Optional[str],
+        Query(
+            ...,
+            description="Поиск по wallet адресу или реф. алиасу приглашённого.",
+            example="EQB1...abcd",  # или "my_invite"
+        ),
     ] = None,
-    level: Annotated[Optional[int], Query(..., ge=1, le=3)] = None,
-    offset: Annotated[int, Query(..., ge=0)] = 0,
-    on_page: Annotated[int, Query(..., ge=1, le=100)] = 10,
+    level: Annotated[
+        Optional[int],
+        Query(
+            ...,
+            ge=1,
+            le=3,
+            description="Фильтр по уровню реферала (1, 2 или 3).",
+            example=1,
+        ),
+    ] = None,
+    offset: Annotated[
+        int,
+        Query(
+            ...,
+            ge=0,
+            description="Смещение (для пагинации).",
+            example=0,
+        ),
+    ] = 0,
+    on_page: Annotated[
+        int,
+        Query(
+            ...,
+            ge=1,
+            le=100,
+            description="Количество элементов на странице.",
+            example=10,
+        ),
+    ] = 10,
     principal: "Principal" = Depends(user_principal),
 ):
     user = principal["user"]
 
-    # Базовый queryset: связи, где текущий пользователь — реферер (любой уровень)
     qs = (
         Referral.objects.filter(referrer=user)
-        .select_related("referred")  # чтобы не дергать БД лишний раз
-        .order_by("level", "-id")  # сначала по уровню, затем по убыванию id
+        .select_related("referred")
+        .order_by("level", "-id")
     )
 
-    # Фильтр по уровню
     if level:
         qs = qs.filter(level=level)
 
-    # Поиск по кошельку/алиасу приглашённого
     if search_query:
         sq = search_query.strip()
         if sq:
@@ -184,7 +330,6 @@ def get_my_referrals(
                 | Q(referred__ref_alias__icontains=sq)
             )
 
-    # Пагинация
     total = qs.count()
     qs = qs[offset : offset + on_page]
 
