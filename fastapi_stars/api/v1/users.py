@@ -1,6 +1,6 @@
 from typing import Annotated, Optional
 
-from django.db.models import Q, Sum
+from django.db.models import Q, Sum, Count
 from fastapi import APIRouter, Depends
 from fastapi.params import Query
 
@@ -19,6 +19,7 @@ from fastapi_stars.schemas.users import (
     StatsForOrderType,
     ReferralsResponse,
     ReferralItem,
+    ReferralsCountResponse,
 )
 from integrations.Currencies import USDT
 
@@ -197,3 +198,37 @@ def get_my_referrals(
     ]
 
     return ReferralsResponse(items=items, total=total)
+
+
+@router.get(
+    "/referrals/count",
+    response_model=ReferralsCountResponse,
+    summary="Получить количество рефералов по уровням",
+    description=(
+        "Возвращает общее количество рефералов и 1, 2 и 3 уровней по отдельности для текущего пользователя."
+    ),
+    responses={
+        200: {"description": "Успешный ответ с количеством рефералов по уровням"},
+        401: {"description": "Недействительная сессия/тип токена."},
+    },
+)
+def get_my_referrals_count(principal: "Principal" = Depends(user_principal)):
+    user = principal["user"]
+    referrals = (
+        Referral.objects.filter(referrer=user)
+        .values("level")
+        .annotate(count=Count("id"))
+    )
+
+    level_counts = {1: 0, 2: 0, 3: 0}
+    for entry in referrals:
+        level_counts[entry["level"]] = entry["count"]
+
+    total_count = sum(level_counts.values())
+
+    return ReferralsCountResponse(
+        level_1=level_counts[1],
+        level_2=level_counts[2],
+        level_3=level_counts[3],
+        total=total_count,
+    )

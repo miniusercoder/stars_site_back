@@ -82,3 +82,23 @@ class ReferralItem(BaseModel):
 class ReferralsResponse(BaseModel):
     items: list[ReferralItem]
     total: int
+
+
+class ReferralsCountResponse(BaseModel):
+    level_1: int = Field(..., description="Количество рефералов 1 уровня")
+    level_2: int = Field(..., description="Количество рефералов 2 уровня")
+    level_3: int = Field(..., description="Количество рефералов 3 уровня")
+    total: int = Field(..., description="Общее количество рефералов")
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "level_1": 5,
+                    "level_2": 3,
+                    "level_3": 2,
+                    "total": 10,
+                }
+            ]
+        }
+    }
