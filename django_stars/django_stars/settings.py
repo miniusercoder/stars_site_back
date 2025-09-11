@@ -70,23 +70,31 @@ WSGI_APPLICATION = "django_stars.django_stars.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": os.getenv("DB_ENGINE", "django.db.backends.sqlite3"),
-        "NAME": (
-            BASE_DIR / "db.sqlite3"
-            if os.getenv("DB_ENGINE", "django.db.backends.sqlite3")
-            == "django.db.backends.sqlite3"
-            else os.getenv("DB_NAME")
-        ),
         "USER": os.getenv("DB_USER"),
         "PASSWORD": os.getenv("DB_PASSWORD"),
         "HOST": os.getenv("DB_HOST", "127.0.0.1"),
         "PORT": os.getenv("DB_PORT", "3306"),
-        "OPTIONS": (
-            {"charset": "utf8mb4"}
-            if os.getenv("DB_ENGINE") == "django.db.backends.mysql"
-            else {}
-        ),
     }
 }
+
+# Database specific settings
+if os.getenv("DB_ENGINE") == "django.db.backends.mysql":
+    DATABASES["default"].update(
+        {
+            "NAME": os.getenv("DB_NAME"),
+            "OPTIONS": ({"charset": "utf8mb4"}),
+            "CONN_HEALTH_CHECKS": True,
+            "CONN_MAX_AGE": 3600,
+        }
+    )
+elif os.getenv("DB_ENGINE") == "django.db.backends.sqlite3":
+    DATABASES["default"].update(
+        {
+            "NAME": str(BASE_DIR / "db.sqlite3"),
+        }
+    )
+else:
+    raise ValueError("Unsupported DB_ENGINE")
 
 
 # Password validation
